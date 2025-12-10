@@ -72,6 +72,15 @@ from screen_ghost.session import (
 from dind_stack.models import Claim, Alert
 from dind_stack import db as dind_db
 
+# Photonic Source (Screen Ghost)
+try:
+    from ghostbox.sources.photonic import ScreenGhostSource, ScreenState
+    PHOTONIC_AVAILABLE = True
+except ImportError:
+    PHOTONIC_AVAILABLE = False
+    ScreenGhostSource = None
+    ScreenState = None
+
 
 # =============================================================================
 # SEMANTIC TENSION: Tension computed from coordinates, not formulas
@@ -223,6 +232,11 @@ class GhostBoxEngine:
     _rss_adapter: Optional[RSSAdapter] = None
     _ical_adapter: Optional[ICalAdapter] = None
     _schemaorg_adapter: Optional[SchemaOrgAdapter] = None
+    _photonic_source: Optional[Any] = None  # ScreenGhostSource
+    
+    # Photonic config
+    screenghost_path: Optional[Path] = None
+    screenghost_device: Optional[str] = None
     
     # Sources
     sources: MultiplexSource = field(default_factory=MultiplexSource)
@@ -258,6 +272,78 @@ class GhostBoxEngine:
     
     @property
     def schemaorg(self) -> SchemaOrgAdapter:
+        if self._schemaorg_adapter is None:
+            self._schemaorg_adapter = SchemaOrgAdapter(space=self.space)
+        return self._schemaorg_adapter
+    
+    @property
+    def photonic(self) -> Optional[Any]:
+        """Screen Ghost photonic source (if available)."""
+        if not PHOTONIC_AVAILABLE:
+            return None
+        if self._photonic_source is None:
+            self._photonic_source = ScreenGhostSource(
+                device=self.screenghost_device,
+                screenghost_path=self.screenghost_path or Path("screenghost.py"),
+            )
+        return self._photonic_source
+    
+    # -------------------------------------------------------------------------
+    # Photonic Intake (Screen Ghost)
+    # -------------------------------------------------------------------------
+    
+    def observe_screen(self) -> Optional[Node]:
+        """
+        Capture current screen state and convert to Node.
+        
+        Requires Screen Ghost and connected Android device.
+        """
+        if not PHOTONIC_AVAILABLE or self.photonic is None:
+            raise RuntimeError("Screen Ghost not available. Install screenghost.py")
+        
+        state = self.photonic.capture()
+        node = self.photonic.to_node(state, self.space)
+        self.nodes_created += 1
+        
+        # Add to attention geometry
+        self.attention.add_event(state.to_event())
+        
+        return node
+    
+    def watch_screen(
+        self, 
+        interval: float = 2.0,
+        app_filter: Optional[str] = None,
+        callback: Optional[callable] = None,
+    ):
+        """
+        Continuously watch screen and ingest states.
+        
+        Args:
+            interval: Seconds between observations
+            app_filter: Only process when in this app
+            callback: Called with (state, node, tension) on each observation
+        """
+        if not PHOTONIC_AVAILABLE or self.photonic is None:
+            raise RuntimeError("Screen Ghost not available")
+        
+        for state in self.photonic.watch(interval=interval, app_filter=app_filter):
+            node = self.photonic.to_node(state, self.space)
+            self.nodes_created += 1
+            
+            # Compute tension for this app
+            tension = self.compute_tension(state.app)
+            
+            # Add to attention
+            self.attention.add_event(state.to_event())
+            
+            if callback:
+                callback(state, node, tension)
+            
+            # Check for alerts
+            if tension.tension_score >= self.tension_threshold:
+                self.alerts_generated += 1
+                print(f"[ALERT] {state.app}.{state.screen}: tension={tension.tension_score:.2f}")
         if self._schemaorg_adapter is None:
             self._schemaorg_adapter = SchemaOrgAdapter(space=self.space)
         return self._schemaorg_adapter

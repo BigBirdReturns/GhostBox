@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ghostbox"
-version = "0.8.1"
+version = "0.8.2"
 description = "Integrated intelligence stack: Screen Ghost + Axiom-KG + DIND + Attention + Sessions + PLTR Analysis"
 readme = "README.md"
 license = {text = "MIT"}

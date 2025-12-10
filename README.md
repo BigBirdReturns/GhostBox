@@ -1,21 +1,56 @@
-# GhostBox v0.8.1
+# GhostBox v0.8.2
 
 **Integrated intelligence stack for semantic tension analysis.**
 
+**Now with Screen Ghost photonic intake.**
+
 ```
-Real Data → Axiom-KG Adapters → Semantic Coordinates → Tension → Attention → Decision
+Photonic (Screen Ghost)  →  Screenshot → VLM → State  ─┐
+                                                       ├→ Semantic Coordinates → Tension → Attention → Decision
+Structured (Adapters)    →  RSS/XBRL/iCal → Parse     ─┘
 ```
 
 ## What's Integrated
 
 | Component | Function |
 |-----------|----------|
+| **Screen Ghost** | Photonic intake - the UI is the API |
 | **Axiom-KG** | Semantic coordinate system with 9 domain adapters |
 | **Screen Ghost** | Capture sources (JSON, CSV, SQLite, webhooks) |
 | **DIND Stack** | Tension detection and alert generation |
 | **Attention Geometry** | Where to look (contradiction, velocity, convergence) |
 | **Session Continuity** | Analyst handoff without context loss |
 | **PLTR Analyzer** | Field Zero domain: SEC filings vs narrative |
+
+## Two Intake Modes
+
+**Photonic (Screen Ghost):**
+```python
+from ghostbox.integration import create_engine
+
+engine = create_engine()
+
+# Single observation
+node = engine.observe_screen()
+tension = engine.compute_tension("Settings")
+
+# Continuous watching
+def on_change(state, node, tension):
+    print(f"{state.app}.{state.screen}: tension={tension.tension_score:.2f}")
+
+engine.watch_screen(interval=5, callback=on_change)
+```
+
+**Structured (Adapters):**
+```python
+engine = create_engine()
+
+# RSS feeds
+nodes = engine.ingest_rss("https://example.com/feed.xml", topic="news")
+
+# SEC filings
+result = engine.run_pltr_analysis()
+```
 
 ## Quick Start
 
@@ -60,32 +95,64 @@ Tensions by claim type:
 ## Architecture
 
 ```
+┌─────────────────────────────────────────────────────────────┐
+│                        GHOSTBOX                             │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│   ┌─────────────────┐         ┌─────────────────┐          │
+│   │  SCREEN GHOST   │         │    AXIOM-KG     │          │
+│   │  (Photonic)     │         │   (Structured)  │          │
+│   │                 │         │                 │          │
+│   │  Screenshot     │         │  RSS Adapter    │          │
+│   │  → VLM          │         │  XBRL Adapter   │          │
+│   │  → State        │         │  iCal Adapter   │          │
+│   │  → Node         │         │  Schema.org     │          │
+│   │                 │         │                 │          │
+│   └────────┬────────┘         └────────┬────────┘          │
+│            │                           │                    │
+│            └───────────┬───────────────┘                    │
+│                        │                                    │
+│                        ▼                                    │
+│              ┌─────────────────┐                            │
+│              │  Semantic Space │                            │
+│              │  (Coordinates)  │                            │
+│              └────────┬────────┘                            │
+│                       │                                     │
+│                       ▼                                     │
+│              ┌─────────────────┐                            │
+│              │ Tension Engine  │                            │
+│              │ (Divergence)    │                            │
+│              └────────┬────────┘                            │
+│                       │                                     │
+│                       ▼                                     │
+│              ┌─────────────────┐                            │
+│              │    Attention    │                            │
+│              │   (Where Look)  │                            │
+│              └─────────────────┘                            │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+```
 ghostbox-integrated/
 ├── src/
 │   ├── axiom/                    # Semantic coordinate system
 │   │   ├── core.py               # Space, Node, SemanticID, Fork
 │   │   └── adapters/             # 9 domain adapters
-│   │       ├── schemaorg.py      # JSON-LD / ASW
-│   │       ├── openapi.py        # API specs
-│   │       ├── rss.py            # RSS/Atom feeds
-│   │       ├── ical.py           # Calendars
-│   │       ├── package.py        # npm/pip/cargo
-│   │       ├── fhir.py           # Healthcare
-│   │       ├── xbrl.py           # Financial (SEC filings)
-│   │       ├── epub.py           # Ebooks
-│   │       └── akn.py            # Legal
 │   │
-│   ├── screen_ghost/             # Capture layer
-│   │   ├── capture.py            # Sources (JSON, CSV, SQLite)
+│   ├── ghostbox/                 # Integration layer
+│   │   ├── integration.py        # GhostBoxEngine
+│   │   └── sources/              # Intake sources
+│   │       └── photonic.py       # Screen Ghost integration
+│   │
+│   ├── screen_ghost/             # Legacy capture layer
+│   │   ├── capture.py            # File sources
 │   │   ├── attention.py          # Attention geometry
 │   │   └── session.py            # Analyst continuity
 │   │
 │   ├── dind_stack/               # Tension detection
 │   │   ├── tension.py            # Tension computation
 │   │   └── server.py             # FastAPI endpoints
-│   │
-│   ├── ghostbox/                 # Integration layer
-│   │   └── integration.py        # GhostBoxEngine
 │   │
 │   └── ghostbox_pltr/            # Field Zero: PLTR analysis
 │       └── analyzer.py           # SEC vs narrative tension

@@ -1,0 +1,3 @@
+[console_scripts]
+ghostbox-demo = ghostbox.integration:demo_integration
+ghostbox-pltr = ghostbox_pltr.analyzer:main

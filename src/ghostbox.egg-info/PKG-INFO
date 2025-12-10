@@ -1,0 +1,22 @@
+Metadata-Version: 2.4
+Name: ghostbox
+Version: 0.8.1
+Summary: Integrated intelligence stack: Screen Ghost + Axiom-KG + DIND + Attention + Sessions + PLTR Analysis
+Author-email: Jonathan Sandhu <jonathan@sandhuconsulting.com>
+License: MIT
+Keywords: knowledge-graph,semantic-coordinates,tension-detection,attention-geometry,field-zero,pltr,xbrl,intelligence
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Provides-Extra: charts
+Requires-Dist: matplotlib>=3.5; extra == "charts"
+Provides-Extra: all
+Requires-Dist: matplotlib>=3.5; extra == "all"
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"

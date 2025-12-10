@@ -1,0 +1,9 @@
+
+[all]
+matplotlib>=3.5
+
+[charts]
+matplotlib>=3.5
+
+[dev]
+pytest>=7.0

@@ -210,9 +210,13 @@ class KnowledgeShardRef:
     """
 
     sealed: "SealedShard"  # the genesis-sealed custody object; the ONLY identity/verification source
-    compiler: str = "axm-core"  # knowledge metadata: the producing pipeline
-    # real source references axm-core extracted from (input document refs); the
-    # sealed manifest's own ``sources[]`` are custody material, read via ``sealed``.
+    compiler: str = "axm-forge"  # knowledge metadata: the producing pipeline (the forge path)
+    # Producer-asserted input-document references (what axm-core extracted from).
+    # These are metadata, NOT custody-anchored identity: a minimal forge run emits
+    # no ``ext/locators@1``, so they are not recoverable or verifiable from the
+    # sealed shard and must never be trusted as custody. The sealed manifest's own
+    # ``sources[]`` ARE custody material -- read them through ``sealed``, never
+    # duplicated into this overlay as authority.
     source_refs: list[str] = field(default_factory=list)
     compiled_at: Optional[str] = None  # maps to the sealed manifest's metadata.created_at
 
@@ -235,7 +239,7 @@ class KnowledgeShardRef:
         cls,
         sealed: "SealedShard",
         *,
-        compiler: str = "axm-core",
+        compiler: str = "axm-forge",
         source_refs: Optional[list[str]] = None,
         compiled_at: Optional[str] = None,
     ) -> "KnowledgeShardRef":

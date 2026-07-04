@@ -111,5 +111,10 @@ def test_compiled_at_maps_to_manifest_created_at():
     assert ref.compiled_at == "2026-07-04T12:34:56Z"  # == sealed.sealed_at (manifest created_at)
 
 
-def test_compiler_is_knowledge_metadata():
-    assert KnowledgeShardRef.over(make_sealed(), compiler="axm-forge").compiler == "axm-forge"
+def test_compiler_default_is_the_forge_pipeline():
+    # Reconciled against the live forge proof: the producing surface is the forge.
+    assert KnowledgeShardRef.over(make_sealed()).compiler == "axm-forge"
+
+
+def test_compiler_is_free_knowledge_metadata():
+    assert KnowledgeShardRef.over(make_sealed(), compiler="axm-core").compiler == "axm-core"

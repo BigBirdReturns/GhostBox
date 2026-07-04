@@ -32,6 +32,22 @@ import time
 import re
 
 
+def stable_hash_int(value: str) -> int:
+    """Process-stable, unsalted hash of ``value`` to a non-negative integer.
+
+    Python's builtin ``hash()`` is per-process salted (PYTHONHASHSEED), so it
+    must never seed a *persistent* semantic coordinate: the same input would
+    land on different coordinates across restarts and could not be reproduced
+    or verified across a repo boundary. This derives the integer from a SHA-256
+    digest of the utf-8 bytes instead, so identical input yields an identical
+    integer in every process and on every machine.
+
+    Note: this is only for persistent, content-addressed derivations. In-memory
+    hashability (``__hash__``) legitimately keeps builtin ``hash()``.
+    """
+    return int.from_bytes(hashlib.sha256(value.encode("utf-8")).digest(), "big")
+
+
 # =============================================================================
 # SEMANTIC ID: Coordinates in Knowledge Space
 # =============================================================================

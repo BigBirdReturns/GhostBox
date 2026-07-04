@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import Any, Dict, Generator, List, Optional, Tuple
 
 # Axiom-KG core (for Node and SemanticID)
-from axiom.core import Node, SemanticID, Space, RelationType
+from axiom.core import Node, SemanticID, Space, RelationType, stable_hash_int
 
 
 # =============================================================================
@@ -359,8 +359,9 @@ class ScreenGhostSource:
         # Get base coordinates from app
         major, type_, subtype = get_app_coords(state.app)
         
-        # Instance from screen name hash
-        instance = hash(state.screen) % 9999 + 1
+        # Instance from screen name hash (stable/unsalted so the coordinate is
+        # reproducible across processes, not per-process salted).
+        instance = stable_hash_int(state.screen) % 9999 + 1
         
         sem_id = SemanticID.create(
             major=major,

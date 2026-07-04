@@ -179,26 +179,82 @@ class EvidenceEvent:
             )
 
 
-@dataclass
+@dataclass(frozen=True)
 class KnowledgeShardRef:
-    """Reference to a compiled knowledge shard produced by axm-core.
+    """axm-core's knowledge overlay ON a genesis-sealed shard.
 
-    A reference, not the shard. GhostBox points at knowledge, it does not own
-    it. shard_id is assigned by axm-core and carried verbatim.
+    Reconciled against the real axm-core surface (probe on branch
+    ``claude/axm-core-knowledge-edge``): axm-core produces knowledge by handing
+    candidates to the genesis compiler (``axm_build.compiler_generic.
+    compile_generic_shard``), so its output *is* a genesis-sealed ``SealedShard``.
+    This ref therefore sits ABOVE that sealed shard, it does not stand beside it
+    and it is not a second custody object.
 
-    NOT YET VERIFIED against axm-core's real surface. Unlike the genesis seam
-    (SealedShard / TrustKernel), this shape has not been reconciled with the
-    live axm-core boundary -- it is a mirror-side guess until the
-    ``axm-core -> KnowledgeShardRef`` edge is wired on its own branch. Do not
-    treat it as the confirmed axm-core boundary.
+    Ownership:
+      - genesis owns ``shard_id``, manifest, signatures, Merkle root, the content
+        ids (``e1_`` / ``c1_`` / ``ea_`` / ``s1_`` / ``p1_``), and verification --
+        all on the embedded ``SealedShard``;
+      - axm-core owns the knowledge selection and this metadata;
+      - GhostBox observes and annotates later, and never here.
+
+    There is deliberately NO independent ``shard_id`` field: identity comes from
+    the embedded sealed shard (see the ``shard_id`` property), so a knowledge ref
+    can never mint or override a custody id. Verification is not a path of its
+    own -- ``verify`` delegates to the custody seam on the underlying sealed
+    shard. There is no ``summary`` (a summary is not axm-core authority; if one is
+    wanted it is a later GhostBox-side annotation, never core or manifest truth).
+    ``namespace`` / ``title`` / ``publisher`` already live in the sealed manifest
+    and are read through ``sealed``, never duplicated here. Knowledge-content
+    addressing (entities/claims/provenance/spans) is genesis-derived and read
+    from the sealed shard when observing, not stored on the ref.
     """
 
-    shard_id: str
-    compiler: str = "axm-core"
+    sealed: "SealedShard"  # the genesis-sealed custody object; the ONLY identity/verification source
+    compiler: str = "axm-forge"  # knowledge metadata: the producing pipeline (the forge path)
+    # Producer-asserted input-document references (what axm-core extracted from).
+    # These are metadata, NOT custody-anchored identity: a minimal forge run emits
+    # no ``ext/locators@1``, so they are not recoverable or verifiable from the
+    # sealed shard and must never be trusted as custody. The sealed manifest's own
+    # ``sources[]`` ARE custody material -- read them through ``sealed``, never
+    # duplicated into this overlay as authority.
     source_refs: list[str] = field(default_factory=list)
-    summary: str = ""
-    compiled_at: str = field(default_factory=now_utc)
-    provenance: ProvenanceState = ProvenanceState.UNTESTED
+    compiled_at: Optional[str] = None  # maps to the sealed manifest's metadata.created_at
+
+    @property
+    def shard_id(self) -> str:
+        """Identity comes from the sealed shard -- never minted or overridden here."""
+        return self.sealed.shard_id
+
+    def verify(self, kernel: "TrustKernel", *, trusted_key: str) -> "VerifyStatus":
+        """Delegate verification to the custody seam on the underlying sealed shard.
+
+        A KnowledgeShardRef is not a verification path of its own: it verifies the
+        SAME object genesis sealed, through the same ``TrustKernel.verify``
+        boundary. Custody and trust never move up into the knowledge layer.
+        """
+        return kernel.verify(self.sealed, trusted_key=trusted_key)
+
+    @classmethod
+    def over(
+        cls,
+        sealed: "SealedShard",
+        *,
+        compiler: str = "axm-forge",
+        source_refs: Optional[list[str]] = None,
+        compiled_at: Optional[str] = None,
+    ) -> "KnowledgeShardRef":
+        """Build a knowledge overlay over a sealed shard.
+
+        ``compiled_at`` defaults to the sealed shard's ``sealed_at`` (the manifest
+        ``metadata.created_at``), so the compile timestamp is never a second
+        source of truth.
+        """
+        return cls(
+            sealed=sealed,
+            compiler=compiler,
+            source_refs=list(source_refs or []),
+            compiled_at=compiled_at if compiled_at is not None else sealed.sealed_at,
+        )
 
 
 @dataclass

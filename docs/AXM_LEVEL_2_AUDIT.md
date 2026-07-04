@@ -159,6 +159,36 @@ amendment** to the genesis contract and is marked as such in code and in
 before it is treated as authoritative. This is the one gate on the GhostBox PR
 that is not machine-checkable; it should be answered before that PR merges.
 
+### F7 — Unsigned commit history, inconsistent with the project's provenance claims (open, human-side)
+
+The commits carrying this work are not cryptographically signed: the ephemeral
+build environment holds no signing key. The author identity is correct
+(`Claude <noreply@anthropic.com>`), but GitHub shows the commits as "Unverified."
+
+For a normal repo this is cosmetic. For this stack it is not. The product is
+verifiable, signed, timestamped provenance — axm-genesis seals with ML-DSA-44,
+and the Threat Geometry paper turns on the difference between *proven* and merely
+*asserted*. An unattested change history is therefore a live inconsistency: the
+receipts for the receipts-machine are missing. This is the same class of gap as
+F1 (salted hash), one level up — F1 meant a coordinate could not prove it was the
+same coordinate across processes; an unsigned commit means the history cannot
+prove who authored it or that it was not altered. On a repo whose product is "you
+can verify this record," an unverifiable commit log is the first thing a hostile
+reader points at.
+
+Not blockable from here (no key in the environment), and holding the PRs hostage
+to signing would be the wrong call. But the accurate status is "unattested,
+inconsistent with what the project claims, smallest fix is human-side commit
+signing" — not "nothing to fix." Resolution is signing keyed to the human owner,
+not the container. The clean form maps onto the F6 genesis gate: unsigned commits
+from automated sessions may land on a branch, but merge to `main` only via a
+**signed merge commit from the owner** — which makes "the kernel owner" and "me
+at 3am" the same *verifiable* identity instead of an honor-system claim.
+
+Held open, like F6. Decide the signing policy **before either PR merges**: the
+merge commit is the first chance to attest `main` top-down, and merging unsigned
+starts the provenance chain with an unverifiable first link.
+
 ## Bottom line
 
 The level-2 **boundary** is sound: roles are separated, sealing is reserved,
@@ -168,7 +198,8 @@ the four provenance states are distinguishable at every emitted object. **F1**
 cross-process determinism test; **F6** closed two review findings — the id
 algorithm is pinned (P1) and receipt identity is split to stop authority aliasing
 without circular math (P2). With F1 closed, Field Zero is reproducible at the
-semantic-coordinate layer on the informational substrate. Two open items remain
+semantic-coordinate layer on the informational substrate. Three open items remain
 non-code: the **genesis-owner sign-off** on the receipt-identity amendment (F6),
-and five repos still `not-verified` — none may be treated as passing until
-audited against source.
+the **commit-signing policy** for an attested history (F7, decide before either PR
+merges), and five repos still `not-verified` — none may be treated as passing
+until audited against source.

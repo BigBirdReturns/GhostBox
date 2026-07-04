@@ -237,6 +237,9 @@ class ShardReceipt:
     contract and must be confirmed by the axm-genesis kernel owner before it is
     treated as authoritative. It changes identity derivation only; it does not
     change sealing or authority semantics (the signature remains the authority).
+
+    This interop shape is a proposed AXM receipt identity contract until adopted
+    by axm-genesis.
     """
 
     shard_id: str

@@ -82,6 +82,8 @@ second. Collapsing them reintroduces the aliasing this split removes.
 genesis-owned shape. It is offered from the interop layer and must be confirmed
 by the axm-genesis kernel owner before it is treated as authoritative. It changes
 identity derivation only; it does not change sealing or authority semantics.
+**This interop shape is a proposed AXM receipt identity contract until adopted by
+axm-genesis.**
 
 ### AttentionFinding
 Emitter: GhostBox. Answers: where is the tension.

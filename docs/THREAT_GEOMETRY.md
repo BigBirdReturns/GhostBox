@@ -224,10 +224,10 @@ that it runs on this one:
 
 | Layer | Role | GhostBox implementation today | Status |
 |---|---|---|---|
-| 1 | Sensor abstraction | ScreenGhost photonic + Axiom-KG adapters (RSS, XBRL, iCal, schema.org, OpenAPI, …) → `EvidenceEvent` / Node | **proven** (informational) |
-| 2 | Baseline field | Semantic coordinate space (Axiom-KG `SemanticID`, `Space`); "normal" = where comparable claims cluster | **proven** (informational) |
-| 3 | Anomaly gradient | `SemanticTension`: spread, source divergence, semantic drift as distance in coordinate space | **proven** (informational) |
-| 4 | Hypothesis topology | `AttentionGeometry` shapes — contradiction, velocity, convergence — and forks; emitted as `AttentionFinding` | **proven** (informational) |
+| 1 | Sensor abstraction | ScreenGhost photonic + Axiom-KG adapters (RSS, XBRL, iCal, schema.org, OpenAPI, …) → `EvidenceEvent` / Node | **reproducible** (informational) |
+| 2 | Baseline field | Semantic coordinate space (Axiom-KG `SemanticID`, `Space`); "normal" = where comparable claims cluster | **reproducible** (informational) |
+| 3 | Anomaly gradient | `SemanticTension`: spread, source divergence, semantic drift as distance in coordinate space | **reproducible** (informational) |
+| 4 | Hypothesis topology | `AttentionGeometry` shapes — contradiction, velocity, convergence — and forks; emitted as `AttentionFinding` | **reproducible** (informational) |
 | 5 | Resource geometry | `where_to_look(top_n)` / `AttentionMap.top()` — allocation of the scarcest asset, *analyst attention* | **partial** — ranks attention; does not yet optimize multi-asset placement under travel/equipment constraints |
 | 6 | Feedback / erosion | Session continuity + alert thresholds; outcome-driven baseline update | **untested** — the loop exists structurally; outcome learning is not yet closed |
 

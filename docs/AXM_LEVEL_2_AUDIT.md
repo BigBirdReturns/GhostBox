@@ -29,7 +29,7 @@ audited gets no green mark.
 
 | Repo | 1 emits | 2 no re-mint | 3 sealing only in genesis | 4 no canonical store | 5 explicit provenance | 6 no salted-hash IDs | 7 four states distinguishable |
 |---|---|---|---|---|---|---|---|
-| **GhostBox** | ✅ interop `AttentionFinding` | ✅ | ✅ (no sealing present) | ✅ | ✅ at boundary | ⚠️ **gap in internals** | ✅ |
+| **GhostBox** | ✅ interop `AttentionFinding` | ✅ | ✅ (no sealing present) | ✅ | ✅ at boundary | ✅ **fixed** (was gap; see F1) | ✅ |
 | **ScreenGhost** | ✅ `EvidenceEvent` (new shim) | ✅ | ✅ (no sealing present) | ✅ | ✅ | ✅ **guarded** | ✅ |
 | axm-genesis | not-verified | not-verified | not-verified | n/a | not-verified | not-verified | not-verified |
 | axm-core | not-verified | not-verified | not-verified | n/a | not-verified | not-verified | not-verified |
@@ -39,35 +39,50 @@ audited gets no green mark.
 
 ## Findings, with evidence
 
-### F1 — GhostBox derives persistent semantic coordinates from salted `hash()` (check 6, gap)
+### F1 — GhostBox derived persistent semantic coordinates from salted `hash()` — **FIXED** (check 6)
 
-The interop **boundary** is clean: `src/ghostbox/interop/contracts.py` content-
-addresses every ID (`content_id` over canonical bytes, BLAKE3 when present,
-SHA-256 fallback, with the algorithm tag embedded in the ID). Verified by running
-the module's self-test.
+Status: **fixed and verified.** Opened as a gap in the first pass; closed in the
+hardening pass after the regression tests below passed.
 
-The GhostBox **internals** are not clean. Node placement — which *is* a
-persistent semantic identity — is derived from Python's per-process-salted
-`hash()` in three places:
+The interop **boundary** was already clean: `src/ghostbox/interop/contracts.py`
+content-addresses every ID (`content_id` over canonical bytes, BLAKE3 when
+present, SHA-256 fallback, algorithm tag embedded in the ID).
 
-- `src/ghostbox/integration.py:374-375` — `type_ = (hash(event.topic) % 99) + 1`
-  and `subtype = (hash(event.text[:50]) % 99) + 1`.
-- `src/ghostbox/sources/photonic.py:363` — `instance = hash(state.screen) % 9999 + 1`.
-- `src/axiom/adapters/schemaorg.py:167` — type bucket from `hash(schema_type)`.
+The GhostBox **internals** were not. Node placement — which *is* a persistent
+semantic identity — was derived from Python's per-process-salted `hash()` in
+three places. Because `PYTHONHASHSEED` randomizes those per process, the same
+input yielded different coordinates across restarts, so a `SemanticID` was not
+reproducible and would not survive a repo boundary — the exact failure the
+contract warns about, one layer below the clean seam.
 
-Because `PYTHONHASHSEED` randomizes these per process, the same event yields
-different coordinates across restarts, so a `SemanticID` is not reproducible and
-will not survive a repo boundary. This is exactly the failure the contract warns
-about, present one layer below the clean seam.
+**Fix applied:**
 
-Not flagged: `src/axiom/core.py:165,260` define `__hash__` dunders
+- Added `stable_hash_int()` to `src/axiom/core.py` — a SHA-256-derived,
+  unsalted integer over the utf-8 bytes.
+- Replaced the salted derivations at all three sites:
+  - `src/ghostbox/integration.py` — `type_` / `subtype` now via `stable_hash_int`.
+  - `src/ghostbox/sources/photonic.py` — screen `instance` now via `stable_hash_int`.
+  - `src/axiom/adapters/schemaorg.py` — the `_hash_type` bucket now via `stable_hash_int`.
+- Added `tests/test_stable_hash.py`. The load-bearing case
+  (`test_coordinates_stable_across_hashseed`) derives the coordinates in three
+  separate Python processes started with `PYTHONHASHSEED` = `0`, `12345`, and
+  `random`, and asserts they agree — with a sensitivity guard asserting that
+  builtin `hash()` of the same string genuinely *differs* across those seeds, so
+  the test cannot pass on a no-op. A source-level guard
+  (`test_no_salted_hash_in_persistent_coordinate_paths`) prevents regression.
+  **4/4 tests pass.**
+
+Not changed (correctly): `src/axiom/core.py:165,260` define `__hash__` dunders
 (`return hash(self.code)` / `hash(self.id)`). Those are legitimate in-memory
-hashability for set/dict membership, not persistent IDs, and are correct.
+hashability for set/dict membership, not persistent IDs, and must keep builtin
+`hash()`.
 
-**Recommendation (out of scope for this pass, logged):** derive coordinates via
-the same content-addressing used at the boundary — e.g. route these through a
-stable digest of canonical bytes rather than builtin `hash()`. This is an
-internals fix, not a contract change.
+**Field Zero reproducibility note.** Before this fix, Field Zero was functionally
+demonstrated but not fully reproducible at the semantic-coordinate layer. After
+this fix, Field Zero can be described as reproducible on the informational
+substrate, subject to the remaining limits documented in
+[`THREAT_GEOMETRY.md`](THREAT_GEOMETRY.md) (single-substrate support is not
+invariance; physical substrates remain untested).
 
 ### F2 — ScreenGhost already hardened against F1's bug class (check 6, pass with guard)
 
@@ -115,7 +130,10 @@ it is not mistaken for a contradiction.
 
 The level-2 **boundary** is sound: roles are separated, sealing is reserved,
 GhostBox owns no record, IDs are content-addressed, and the four provenance
-states are distinguishable at every emitted object. The one substantive gap is
-**internal to GhostBox** (F1: salted-hash coordinates), and the fix already
-exists, tested, in a sibling repo (F2). Five repos remain `not-verified` and must
-not be treated as passing until audited against source.
+states are distinguishable at every emitted object. The one substantive gap —
+**F1: salted-hash coordinates internal to GhostBox** — has been **fixed and
+verified** with a cross-process determinism regression test; the same fix was
+already tested in a sibling repo (F2). With F1 closed, Field Zero is reproducible
+at the semantic-coordinate layer on the informational substrate. Five repos
+remain `not-verified` and must not be treated as passing until audited against
+source.

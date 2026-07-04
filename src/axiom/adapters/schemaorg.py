@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional
 from pathlib import Path
 
 from .base import JSONAdapter
-from axiom.core import Node, SemanticID, Space, RelationType
+from axiom.core import Node, SemanticID, Space, RelationType, stable_hash_int
 
 
 # Schema.org top-level types → axiom-kg major categories
@@ -163,8 +163,9 @@ class SchemaOrgAdapter(JSONAdapter):
             if schema_type in SCHEMA_TYPE_TO_TYPE:
                 self._type_hash_cache[schema_type] = SCHEMA_TYPE_TO_TYPE[schema_type]
             else:
-                # Hash to 1-99 range
-                self._type_hash_cache[schema_type] = (hash(schema_type) % 99) + 1
+                # Hash to 1-99 range. Stable/unsalted so the coordinate is
+                # reproducible across processes.
+                self._type_hash_cache[schema_type] = (stable_hash_int(schema_type) % 99) + 1
         return self._type_hash_cache[schema_type]
     
     def _get_major(self, schema_type: str) -> int:

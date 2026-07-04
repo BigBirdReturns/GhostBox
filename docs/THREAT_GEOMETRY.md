@@ -25,14 +25,26 @@ watch," "financial narrative divergence" — are surface names for one problem.
 
 ## 1. The claim, stated so it can be argued with
 
-There is an invariant architecture underneath distributed threat intelligence.
-The **modality** changes. The **signature library** changes. The **fusion,
-hypothesis tracking, resource optimization, and feedback loop do not.**
+> **Status of the central claim.** The middle layers are *hypothesized* to be
+> substrate-invariant. They are currently exercised on the **informational**
+> substrate through Field Zero. **Physical substrates remain untested** until
+> GhostBox produces reproducible findings from real or controlled physical
+> corpora *without* domain-specific rewrite of the core attention/tension
+> machinery. Nothing below should be read as claiming the invariance is
+> established. It is the thesis under test, not a result.
 
-If that is true, then a system built correctly for one modality is not a
-one-off. It is an instance of a substrate-invariant engine, and moving to a new
-modality is a matter of swapping the sensor front-end and the signature library,
-not rebuilding the intelligence layer.
+This paper advances a hypothesis: that there is an invariant architecture
+underneath distributed threat intelligence — one in which the **modality**
+changes and the **signature library** changes, but the fusion, hypothesis
+tracking, resource optimization, and feedback loop do not. Whether that holds is
+exactly what remains to be shown; it is asserted here as the claim to be tested,
+not as a demonstrated property.
+
+If the hypothesis holds, then a system built correctly for one modality would not
+be a one-off — it would be an instance of a substrate-invariant engine, and
+moving to a new modality would be a matter of swapping the sensor front-end and
+the signature library rather than rebuilding the intelligence layer. That
+conditional is the whole bet, and it is unproven for any physical modality today.
 
 This is falsifiable. It is false if any of the following hold:
 
@@ -80,10 +92,12 @@ These five are why the correct primitive is a **field with a baseline and a
 gradient**, and why the correct output is **an allocation**, not an alert. Every
 subsequent design choice follows from taking these five seriously.
 
-## 3. The substrate-invariant architecture
+## 3. The hypothesized substrate-invariant architecture
 
 Six layers. The first and last are modality-specific at their edges. The middle
-four are the invariant engine.
+four are the *candidate* invariant engine — hypothesized to be substrate-
+invariant, exercised so far only on the informational substrate (see Status,
+§1). Read the diagram as the shape being tested, not a property already held.
 
 ```
                  modality-specific edge
@@ -94,8 +108,8 @@ four are the invariant engine.
                           │
    ┌──────────────────────┼───────────────────────┐
    │  2. Baseline field   ▼                        │
-   │     learn "normal" per (location, time,       │   ── invariant engine ──
-   │     season) cell                              │   the same code regardless
+   │     learn "normal" per (location, time,       │  ─ candidate invariant engine ─
+   │     season) cell                              │   hypothesized same regardless
    ├──────────────────────────────────────────────┤   of what feeds layer 1
    │  3. Anomaly gradient                          │
    │     deviation of a cell from its own baseline │
@@ -182,9 +196,10 @@ hypothesis, *place limited defensive assets to minimize expected loss.* The
 output is a deployment — officers, interceptors, fire crews, sensor dwell,
 analyst attention — plus a coverage map showing what is now exposed.
 
-The same allocator drives every modality because the objective is written over
-hypotheses and constraints, not over drones or filings. Change the asset type
-and the damage model; the optimization is the same shape.
+The same allocator is *intended* to drive every modality, because the objective
+is written over hypotheses and constraints rather than over drones or filings —
+change the asset type and the damage model and the optimization keeps the same
+shape. On physical modalities this is design intent, not a demonstrated result.
 
 ### Layer 6 — Feedback / erosion model
 
@@ -202,10 +217,12 @@ Honesty is the whole game in a sparse-signal domain, so this section is explicit
 about what exists versus what is projected. No category borrows trust from
 another.
 
-GhostBox today implements the invariant engine (layers 2–5, with the feedback
-loop partial) over an **informational / semantic** substrate:
+GhostBox today implements this candidate engine (layers 2–5, feedback partial)
+over **one** substrate — the **informational / semantic** one. That the engine is
+*invariant across* substrates is the open hypothesis; the table below shows only
+that it runs on this one:
 
-| Layer | Invariant role | GhostBox implementation today | Status |
+| Layer | Role | GhostBox implementation today | Status |
 |---|---|---|---|
 | 1 | Sensor abstraction | ScreenGhost photonic + Axiom-KG adapters (RSS, XBRL, iCal, schema.org, OpenAPI, …) → `EvidenceEvent` / Node | **proven** (informational) |
 | 2 | Baseline field | Semantic coordinate space (Axiom-KG `SemanticID`, `Space`); "normal" = where comparable claims cluster | **proven** (informational) |
@@ -223,17 +240,54 @@ narrative eroding away from filings — and it is the honest proof that the engi
 works at all. It is **not** proof that any physical modality works.
 
 The **physical** substrate — drone launch, crowd crush, border intrusion,
-wildfire, convoy ambush — is the projection of this same engine onto sensor data
-carried by `PhysicalEvidenceEvent` from axm-embodied. As of this paper, every
-physical modality is **simulated or untested**. The engine is shared by design;
-the sensor front-ends and signature libraries are not built. Claiming otherwise
-would be exactly the grain-of-sand-to-shoreline overreach this paper is trying
-to make disciplined.
+wildfire, convoy ambush — would be the projection of this same engine onto sensor
+data carried by `PhysicalEvidenceEvent` from axm-embodied. As of this paper, every
+physical modality is **untested**: the sensor front-ends and signature libraries
+are not built, and no physical corpus has been run through the core machinery.
+The engine is *intended* to be shared across substrates — that sharing is the
+hypothesis, not a result. Claiming otherwise would be exactly the
+grain-of-sand-to-shoreline overreach this paper is trying to make disciplined.
 
-The single durable claim, then, is narrow and defensible: *the middle four
-layers are substrate-invariant, demonstrated on an informational substrate, and
-the physical instances are future modalities behind the same seam — not shipped
-capability.*
+The single defensible claim, then, is narrow: *the middle layers are hypothesized
+to be substrate-invariant; they are currently exercised only on the informational
+substrate through Field Zero; and physical substrates remain untested until
+GhostBox produces reproducible findings from real or controlled physical corpora
+without domain-specific rewrite of the core attention/tension machinery.* The
+physical modalities are candidate future work behind the same seam — not shipped,
+not demonstrated, not invariance-proven capability.
+
+## Falsification Conditions
+
+The substrate-invariance hypothesis is only worth stating if it can be killed.
+It is written to be killed. These are the conditions, stated up front so a result
+can settle the question rather than a narrative.
+
+**The hypothesis fails if:**
+
+- a second substrate requires **rewriting the core tension/attention machinery**
+  rather than adding adapters / signature libraries;
+- **findings cannot reproduce** from the same corpus;
+- **domain-specific calibration dominates** the supposedly invariant core;
+- **resource recommendations cannot be traced** back to evidence, hypotheses, and
+  constraints;
+- **false-positive economics differ so much** that the shared engine no longer
+  explains the operational burden.
+
+**The hypothesis gains support if:**
+
+- GhostBox emits **structurally similar `AttentionFinding` objects across two
+  distinct corpora**;
+- the only substrate-specific components are **intake adapters, baseline
+  calibration, signature libraries, and resource definitions**;
+- the **core finding format, provenance states, and claim boundaries remain
+  unchanged**.
+
+Note the asymmetry: a single substrate (Field Zero) can *support* the hypothesis
+weakly but cannot *confirm* invariance — invariance is a claim about the relation
+between substrates, so it needs at least a second, structurally distinct corpus
+run through an unchanged core before the word "invariant" is earned. Until then,
+"candidate" and "hypothesized" are the correct words, and they are used
+deliberately throughout this paper.
 
 ## 5. Where this sits in the AXM layering
 
@@ -295,7 +349,9 @@ operator is indifferent to which one it is. That indifference is the thesis.
 ## 8. Scope, non-goals, and the competitive question
 
 This is a theory paper. It does not ship a physical sensor stack, and it does not
-claim one. It defines an invariant and shows one honest, running instance of it.
+claim one. It proposes a *candidate* invariant and shows one honest, running
+instance of it on a single (informational) substrate — which supports the
+hypothesis without confirming it.
 
 The competitive implication — that centralized-ontology systems are built to
 explain records *after* collection while this architecture redirects attention

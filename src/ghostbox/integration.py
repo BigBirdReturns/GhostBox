@@ -25,13 +25,14 @@ import json
 
 # Axiom-KG core
 from axiom.core import (
-    Space, 
-    Node, 
-    SemanticID, 
-    RelationType, 
+    Space,
+    Node,
+    SemanticID,
+    RelationType,
     Fork,
     DeterministicWrapper,
     Strategy,
+    stable_hash_int,
 )
 
 # Axiom-KG adapters
@@ -370,9 +371,10 @@ class GhostBoxEngine:
         )
         
         # Create semantic node
-        # Events are Entities (Major 1), type based on topic hash
-        type_ = (hash(event.topic) % 99) + 1
-        subtype = (hash(event.text[:50]) % 99) + 1
+        # Events are Entities (Major 1), type based on a stable (unsalted) hash
+        # of the topic/text so the coordinate is reproducible across processes.
+        type_ = (stable_hash_int(event.topic) % 99) + 1
+        subtype = (stable_hash_int(event.text[:50]) % 99) + 1
         
         sem_id = SemanticID.create(
             major=1,

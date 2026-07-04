@@ -14,10 +14,15 @@ a stable ID. It is per-process salted through PYTHONHASHSEED and will not
 survive a restart, let alone cross a repo boundary.
 
 IDs take the form `<prefix>:<algorithm>:<hex>`, for example
-`evt:b3:1c703656...`. The algorithm tag names what actually produced the digest,
-BLAKE3 when the `blake3` package is present, SHA-256 otherwise. Consumers verify
-against the stated algorithm rather than guessing. Canonicalization is sorted
-keys, no insignificant whitespace, utf-8.
+`evt:sha256:c34679d7...`. The algorithm is **pinned to SHA-256 as a fixed
+contract constant** — not an environment-dependent choice. An optional backend
+(e.g. BLAKE3 when the `blake3` package happens to be installed) would make the
+same canonical object hash to `evt:b3:...` on one machine and `evt:sha256:...` on
+another, silently breaking the cross-repo promise that one observation yields one
+`event_id`. Algorithm agility, if ever required, must be an explicit new contract
+version carrying its own tag — never a silent import-driven switch. The tag stays
+in the id so consumers verify against the stated algorithm rather than guessing.
+Canonicalization is sorted keys, no insignificant whitespace, utf-8.
 
 Refs carry externally assigned IDs verbatim. A KnowledgeShardRef does not
 re-mint the shard id that axm-core assigned. GhostBox points at shards. It does
@@ -51,10 +56,32 @@ axm-chat is a named core spoke. Flagged for audit confirmation.
 ### ShardReceipt
 Emitter: axm-genesis. Answers: can this record be verified.
 Fields: shard_id, content_hash, signature, signature_algorithm (ML-DSA-44),
-hash_algorithm (BLAKE3), sealed_at, verified, provenance (FROZEN), receipt_id.
+hash_algorithm, sealed_at, signer, verified, provenance (FROZEN),
+receipt_body_id, receipt_id (a.k.a. attestation_id).
 Contract: genesis is the only issuer. GhostBox and others verify against a
-receipt, they never produce a signature. receipt_id is derived for stable
-reference; the signature is the authority.
+receipt; they never produce a signature. The signature is the authority — no
+derived id replaces it.
+
+Identity is split into two objects with different lifetimes, so distinct
+authority records never alias and no id is circular:
+- `receipt_body_id` identifies the *unsigned body* — `shard_id`, `content_hash`,
+  `hash_algorithm`, `sealed_at`. Same body → same body id; it never includes a
+  signature.
+- `receipt_id` / `attestation_id` identifies the *signed authority record* —
+  body id + `signer` + `signature_algorithm` + `signature`. Two signatures over
+  the same body are two authority events with two ids. It is derived *after*
+  signing and is never part of the signed payload, so the id can depend on the
+  signature without the signature depending on the id.
+
+Verify path: state which question you ask, because they are different objects —
+"is this body sealed at all?" keys on `receipt_body_id`; "is this specific
+authority act valid?" keys on `receipt_id`. `TrustKernel.verify` answers the
+second. Collapsing them reintroduces the aliasing this split removes.
+
+**PROPOSED AMENDMENT.** This two-id split refines identification of a
+genesis-owned shape. It is offered from the interop layer and must be confirmed
+by the axm-genesis kernel owner before it is treated as authoritative. It changes
+identity derivation only; it does not change sealing or authority semantics.
 
 ### AttentionFinding
 Emitter: GhostBox. Answers: where is the tension.

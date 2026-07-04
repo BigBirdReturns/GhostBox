@@ -116,24 +116,59 @@ upstream IDs. `KnowledgeShardRef` / `ConversationShardRef` carry externally
 assigned `shard_id`s verbatim; GhostBox points, it does not own. The level-2
 invariant holds at the seam.
 
-### F5 — `ShardReceipt.hash_algorithm` is a declared constant, not a detected one (note, not a gap)
+### F5 — `ShardReceipt.hash_algorithm` is a declared constant, not a detected one (note; folded into F6)
 
-The contract's `ShardReceipt` defaults `hash_algorithm="BLAKE3"` while, in an
-environment without the `blake3` package, the derived `receipt_id` tag falls back
-to `sha256`. These are consistent by design — the field names the sealing
-algorithm axm-genesis is expected to use; the `receipt_id` is only a local stable
-reference and the signature is the authority — but a consumer should read the
-algorithm tag *inside* the ID, not the declared field, when verifying. Logged so
-it is not mistaken for a contradiction.
+The contract's `ShardReceipt` declares `hash_algorithm` (the algorithm used to
+produce `content_hash`) as a field, while the id-derivation digest is a separate,
+now-pinned SHA-256 (F6/P1). These are different things and were previously easy
+to conflate. As of F6 the `hash_algorithm` field participates in the identity
+directly (it is part of `receipt_body_id`), so the declared value can no longer
+drift silently from what the id covers. A consumer still reads the algorithm tag
+*inside* the id when verifying the id itself.
+
+### F6 — Review-driven hardening: id pin (P1) and receipt-identity split (P2) — **applied**
+
+Two automated-review findings on the PRs were both real and are fixed.
+
+**P1 — boundary ids pinned to SHA-256.** The id digest previously used BLAKE3
+when the `blake3` package was importable and SHA-256 otherwise, with the tag
+baked into the id. So the same canonical object produced `evt:b3:...` on one
+machine and `evt:sha256:...` on another, breaking the contract's own promise that
+one observation yields one `event_id` across ScreenGhost and GhostBox. Fixed by
+pinning the algorithm to SHA-256 as a fixed contract constant on **both** sides
+(`ghostbox/interop/contracts.py` and ScreenGhost's `core/evidence_event.py`).
+Guarded by `tests/test_interop_ids.py` and the ScreenGhost conformance test
+(`_HASH_TAG == "sha256"`, no optional-backend branch).
+
+**P2 — receipt identity split to stop authority aliasing.** `receipt_id`
+previously omitted the signature, so two distinct signatures over the same
+shard/content/`sealed_at` (deterministic replay, retry, key rotation) aliased to
+one id. Fixed by splitting identity: `receipt_body_id` (unsigned body:
+`shard_id`, `content_hash`, `hash_algorithm`, `sealed_at`) and `receipt_id` /
+`attestation_id` (the signed authority record, including `signer`,
+`signature_algorithm`, `signature`). The body id never depends on a signature and
+`receipt_id` is derived after signing and never part of the signed payload, so
+there is **no circular hash/signature dependency**. `TrustKernel.verify` is
+documented to key on the signed record (`receipt_id`); "is this body sealed" keys
+on `receipt_body_id`. Guarded by `tests/test_interop_ids.py`.
+
+**Governance flag (open, non-code).** The receipt-identity split refines how a
+**genesis-owned** shape is identified. It is landed here as a **proposed
+amendment** to the genesis contract and is marked as such in code and in
+`INTEROP_CONTRACTS.md`. It must be confirmed by the axm-genesis kernel owner
+before it is treated as authoritative. This is the one gate on the GhostBox PR
+that is not machine-checkable; it should be answered before that PR merges.
 
 ## Bottom line
 
 The level-2 **boundary** is sound: roles are separated, sealing is reserved,
-GhostBox owns no record, IDs are content-addressed, and the four provenance
-states are distinguishable at every emitted object. The one substantive gap —
-**F1: salted-hash coordinates internal to GhostBox** — has been **fixed and
-verified** with a cross-process determinism regression test; the same fix was
-already tested in a sibling repo (F2). With F1 closed, Field Zero is reproducible
-at the semantic-coordinate layer on the informational substrate. Five repos
-remain `not-verified` and must not be treated as passing until audited against
-source.
+GhostBox owns no record, IDs are content-addressed and now algorithm-pinned, and
+the four provenance states are distinguishable at every emitted object. **F1**
+(salted-hash coordinates internal to GhostBox) is **fixed and verified** with a
+cross-process determinism test; **F6** closed two review findings — the id
+algorithm is pinned (P1) and receipt identity is split to stop authority aliasing
+without circular math (P2). With F1 closed, Field Zero is reproducible at the
+semantic-coordinate layer on the informational substrate. Two open items remain
+non-code: the **genesis-owner sign-off** on the receipt-identity amendment (F6),
+and five repos still `not-verified` — none may be treated as passing until
+audited against source.

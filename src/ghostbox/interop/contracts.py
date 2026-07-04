@@ -8,8 +8,8 @@ data shapes and protocols, not behavior.
 Design rules enforced here:
   - No salted Python hash for persistent IDs. Python's built-in hash() is
     per-process salted (PYTHONHASHSEED) and must never be used for stable IDs.
-    All derived IDs are content-addressed over canonical bytes using BLAKE3
-    when available, SHA-256 otherwise.
+    All derived IDs are content-addressed over canonical bytes using SHA-256,
+    pinned as a fixed contract constant (no environment-dependent fallback).
   - Every boundary distinguishes proven, simulated, frozen, and untested.
   - Refs carry externally assigned IDs. GhostBox references shards, it does
     not store or re-mint them.
@@ -33,21 +33,21 @@ from typing import Any, Optional, Protocol, runtime_checkable
 # Hashing / stable content-addressed IDs
 # ---------------------------------------------------------------------------
 
-try:
-    import blake3 as _blake3  # type: ignore
+import hashlib
 
-    _HASH_TAG = "b3"
+# Boundary IDs are pinned to SHA-256. For cross-repo identity, one canonical
+# object must produce one id everywhere, so the algorithm is a fixed contract
+# constant — never an environment-dependent fallback. An optional backend (e.g.
+# blake3 when the package happens to be installed) would make the same object
+# hash to `evt:b3:...` on one machine and `evt:sha256:...` on another, silently
+# breaking cross-repo correlation and dedup. Algorithm agility, if ever needed,
+# must be an explicit new contract version with its own tag, not a silent
+# import-driven switch.
+_HASH_TAG = "sha256"
 
-    def _digest(data: bytes) -> str:
-        return _blake3.blake3(data).hexdigest()
 
-except ImportError:  # pragma: no cover - fallback path
-    import hashlib
-
-    _HASH_TAG = "sha256"
-
-    def _digest(data: bytes) -> str:
-        return hashlib.sha256(data).hexdigest()
+def _digest(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
 
 
 def canonical_bytes(payload: dict[str, Any]) -> bytes:
@@ -197,8 +197,46 @@ class ShardReceipt:
     """Seal-and-verify record produced by the axm-genesis trust kernel.
 
     axm-genesis is authoritative for sealing. GhostBox consumes receipts and
-    verifies against them. It never mints signatures. receipt_id is derived
-    for stable reference; the signature is the authority.
+    verifies against them; it never mints signatures. The signature is the
+    authority — no derived id ever replaces it.
+
+    Identity is split into two objects with different lifetimes, so that
+    distinct authority records never alias and no id depends on a signature
+    that depends on it:
+
+      receipt_body_id  identity of the *thing sealed* — the unsigned canonical
+                       body (shard_id, content_hash, hash_algorithm, sealed_at).
+                       The body outlives any single signature, so re-sealing the
+                       same body reproduces the same body id. It never includes
+                       a signature.
+      receipt_id       identity of the *sealing act* — the signed authority
+                       record. Includes the signature (plus the signer and the
+                       algorithms), so two different signatures over the same
+                       body are two different authority events with two different
+                       ids. Also exposed as ``attestation_id``.
+
+    Why split, not just add the signature: the body and the sealing act are
+    different objects with different lifetimes. Collapsing them into one id is
+    what let two signatures alias to one identity; do not recombine them for
+    convenience.
+
+    No circularity: the signature signs the body/content, never receipt_id;
+    receipt_id is derived *after* signing and is never part of the signed
+    payload, so the id can depend on the signature without the signature
+    depending on the id.
+
+    verify() semantics — state which question you are asking, because they are
+    different objects:
+      * "is this body sealed at all?"           -> key on receipt_body_id
+      * "is this specific authority act valid?" -> key on receipt_id
+    A verifier that keys on the wrong one reintroduces the original aliasing one
+    layer up. TrustKernel.verify answers the second (authority-act) question.
+
+    GOVERNANCE: this two-id split refines how a genesis-owned shape is
+    identified. It is offered here as a PROPOSED AMENDMENT to the genesis
+    contract and must be confirmed by the axm-genesis kernel owner before it is
+    treated as authoritative. It changes identity derivation only; it does not
+    change sealing or authority semantics (the signature remains the authority).
     """
 
     shard_id: str
@@ -207,21 +245,43 @@ class ShardReceipt:
     signature_algorithm: str = "ML-DSA-44"
     hash_algorithm: str = "BLAKE3"
     sealed_at: str = field(default_factory=now_utc)
+    signer: Optional[str] = None  # signer identity / public-key fingerprint, if available
     verified: bool = False
     provenance: ProvenanceState = ProvenanceState.FROZEN
+    receipt_body_id: str = ""
     receipt_id: str = ""
 
     def __post_init__(self) -> None:
-        if not self.receipt_id:
-            self.receipt_id = content_id(
-                "rcpt",
+        if not self.receipt_body_id:
+            # The unsigned body: what was sealed, and when. No signature here, so
+            # re-sealing the same body reproduces the same body id.
+            self.receipt_body_id = content_id(
+                "rbody",
                 {
                     "shard_id": self.shard_id,
                     "content_hash": self.content_hash,
-                    "signature_algorithm": self.signature_algorithm,
+                    "hash_algorithm": self.hash_algorithm,
                     "sealed_at": self.sealed_at,
                 },
             )
+        if not self.receipt_id:
+            # The signed authority record. Derived AFTER signing and never fed
+            # back into what is signed, so there is no circular dependency. Two
+            # distinct signatures over the same body get two distinct ids.
+            self.receipt_id = content_id(
+                "rcpt",
+                {
+                    "receipt_body_id": self.receipt_body_id,
+                    "signature_algorithm": self.signature_algorithm,
+                    "signer": self.signer,
+                    "signature": self.signature,
+                },
+            )
+
+    @property
+    def attestation_id(self) -> str:
+        """Alias for ``receipt_id``: the id of the signed authority record."""
+        return self.receipt_id
 
 
 @dataclass
@@ -353,6 +413,10 @@ class TrustKernel(Protocol):
     def seal(self, shard_id: str, content_hash: str) -> ShardReceipt: ...
 
     def verify(self, receipt: ShardReceipt) -> bool: ...
+    # verify answers "is this specific authority act valid?" — it keys on the
+    # signed record (receipt.receipt_id / attestation_id), not receipt_body_id.
+    # "Is this body sealed at all?" is a different question that keys on
+    # receipt_body_id; do not collapse the two into one call.
 
 
 @runtime_checkable
@@ -404,7 +468,7 @@ if __name__ == "__main__":
         captured_at=fixed,
     )
     assert e1.event_id == e2.event_id, "content addressing must be deterministic"
-    assert ":" in e1.event_id and e1.event_id.startswith("evt:")
+    assert e1.event_id.startswith("evt:sha256:"), "boundary ids are pinned to sha256"
 
     finding = AttentionFinding(
         tension_type="contradiction",
@@ -427,6 +491,18 @@ if __name__ == "__main__":
         signature="<opaque>",
         sealed_at=fixed,
     )
+
+    # Identity split: same body, different signature -> same body id, distinct
+    # authority (receipt) id, with no circular dependency.
+    r_sig_a = ShardReceipt(shard_id="know:example", content_hash="deadbeef",
+                           signature="sigA", sealed_at=fixed)
+    r_sig_b = ShardReceipt(shard_id="know:example", content_hash="deadbeef",
+                           signature="sigB", sealed_at=fixed)
+    assert r_sig_a.receipt_body_id == r_sig_b.receipt_body_id, "same body must share body id"
+    assert r_sig_a.receipt_id != r_sig_b.receipt_id, "distinct signatures must not alias"
+    assert r_sig_a.attestation_id == r_sig_a.receipt_id
+    assert receipt.receipt_body_id.startswith("rbody:sha256:")
+    assert receipt.receipt_id.startswith("rcpt:sha256:")
 
     phys = PhysicalEvidenceEvent(
         trigger="motion",

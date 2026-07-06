@@ -69,5 +69,21 @@ documented custody pattern — it does not get to choose a second.
   role, not an axm-chat interface. `conversation_observer.py` inherits the one
   custody pattern; live-proven against the real probe shard (6 findings, all
   keyed to genesis ids).
-- `PhysicalEvidenceEvent` / `EmbodiedSource` (axm-embodied): still mirror-side
-  guesses — the last unreconciled edge.
+- `PhysicalEvidenceEvent` / `EmbodiedSource` (axm-embodied): reconciled on
+  `claude/session-planning-1h0xlw`. The probe drove a real
+  `FrameCaptureRecorder` session (sim frames, labeled as sim) and sealed it via
+  the real `compile_frame_capsule` (namespace `embodied/capture`, publisher
+  `@axm_embodied`, tier `physical_capture`, `ext/streams@1.jsonl` judge index),
+  verified detached with an out-of-band key. Corrections to reality:
+  `fidelity` removed (nothing real backs it); `trigger_source` and `frame_id`
+  added (the real recorder requires a declared reason AND source, and keys
+  every kept record by a session-monotonic frame id); `continuity_ref`
+  documented as the chain hash anchored at `chain_genesis`, sealed twice.
+  `EmbodiedSource` annotated as a consumer-side adapter role (axm-embodied
+  exports no `emit_physical()` — its surface is recorder + compiler returning
+  an `sh1_` string). `physical_observer.py` inherits the one custody pattern
+  (custody VERIFIED -> tier check -> sealed stream index must agree with the
+  declared kept-frame count -> bounded findings; frames.bin is never opened);
+  live-proven against the real probe shard (custody PASS, trusted, 4 bounded
+  findings). With this, every contract edge has been reconciled against its
+  real surface.

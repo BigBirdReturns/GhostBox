@@ -435,20 +435,50 @@ class ClaimCheckResult:
 
 @dataclass
 class PhysicalEvidenceEvent:
-    """What changed in the physical world fast enough to require proof.
-    Emitted by axm-embodied.
+    """One kept frame of physical evidence. Emitted by axm-embodied.
 
-    Event-triggered high-resolution capture with forensic continuity.
-    continuity_ref anchors the non-selective recording chain; a break in that
-    chain is itself a finding, not a silent gap.
+    Reconciled against the real axm-embodied frame-capture surface (probe on
+    branch ``claude/session-planning-1h0xlw``): a real ``FrameCaptureRecorder``
+    session was driven (simulated sensor frames, labeled as sim) and sealed via
+    ``compile_frame_capsule`` into a genesis shard — namespace
+    ``embodied/capture``, publisher ``@axm_embodied``, evidence tier
+    ``physical_capture`` with explicit limits — verified detached with an
+    out-of-band key.
+
+    Reconciliation (guess -> reality):
+      - The custody boundary is the SEALED SHARD, not this event. This event
+        mirrors one ``frame_kept`` record of the sealed capture log —
+        producer-declared facts about what the sensor emitted — and must never
+        be treated as verified physical evidence on its own. Verified
+        observation goes through the physical observer over the ``SealedShard``:
+        one custody pattern, never a second.
+      - ``trigger`` and ``trigger_source`` are BOTH caller-declared: the real
+        recorder refuses a trigger without an explicit reason AND source, and
+        never infers one from the pixels. The guess omitted the source.
+      - ``continuity_ref`` is the frame's chain hash — ``sha256(prev_chain ‖
+        payload_hash ‖ frame_id)``, anchored at a session-bound
+        ``chain_genesis`` — sealed twice in the real capsule (in every
+        ``frames.bin`` record and in the ``frame_kept`` log lines). A break in
+        that chain is itself a finding, not a silent gap.
+      - ``frame_id`` is monotonic across the whole session, kept frames or
+        not, so the gaps between capture windows are visible and declared,
+        never silently spliced. The guess omitted it; reality keys every kept
+        record by it.
+      - ``fidelity`` is gone — nothing in the real surface carries a fidelity
+        field; ``"high"`` asserted a quality nothing measured.
+
+    provenance PROVEN asserts faithful capture of opaque sensor bytes (the
+    recorder never decodes, filters, classifies, or interprets them) — nothing
+    about identity, activity, or platform truth.
     """
 
-    trigger: str
-    sensor: str
-    continuity_ref: str
-    content_hash: str
+    trigger: str          # caller-declared trigger reason; never inferred from pixels
+    trigger_source: str   # caller-declared trigger source (e.g. a PIR sensor id); never inferred
+    sensor: str           # sensor_id of the capturing sensor
+    continuity_ref: str   # this frame's chain hash, anchored at the session chain_genesis
+    content_hash: str     # sha256 of the opaque frame payload bytes
+    frame_id: int         # session-monotonic id; gaps expose what was NOT kept
     captured_at: str = field(default_factory=now_utc)
-    fidelity: str = "high"
     provenance: ProvenanceState = ProvenanceState.PROVEN
     event_id: str = ""
 
@@ -458,9 +488,11 @@ class PhysicalEvidenceEvent:
                 "phys",
                 {
                     "trigger": self.trigger,
+                    "trigger_source": self.trigger_source,
                     "sensor": self.sensor,
                     "continuity_ref": self.continuity_ref,
                     "content_hash": self.content_hash,
+                    "frame_id": self.frame_id,
                     "captured_at": self.captured_at,
                 },
             )
@@ -542,7 +574,17 @@ class ClaimHarness(Protocol):
 
 @runtime_checkable
 class EmbodiedSource(Protocol):
-    """axm-embodied. Physical-world evidence spoke."""
+    """axm-embodied. Physical-world evidence spoke.
+
+    Reconciled note: axm-embodied itself exports NO event-emitting API — its
+    real surface is ``FrameCaptureRecorder`` (writes a capture capsule) plus
+    ``compile_frame_capsule`` (seals it and returns the derived ``sh1_``
+    identity string). This protocol is therefore the shape of a *consumer-side
+    adapter* over the sealed capsule log (read a custody-VERIFIED shard's
+    ``frame_kept`` records, build one ``PhysicalEvidenceEvent`` per kept
+    frame), not an interface the axm-embodied package implements or is
+    expected to grow.
+    """
 
     def emit_physical(self) -> list[PhysicalEvidenceEvent]: ...
 
@@ -595,9 +637,11 @@ if __name__ == "__main__":
 
     phys = PhysicalEvidenceEvent(
         trigger="motion",
+        trigger_source="pir-3",
         sensor="cam-01",
         continuity_ref="chain:0001",
         content_hash="cafebabe",
+        frame_id=1,
         captured_at=fixed,
     )
 

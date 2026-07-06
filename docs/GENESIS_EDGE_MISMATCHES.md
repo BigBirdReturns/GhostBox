@@ -43,10 +43,31 @@ even by mistake. No write-back path exists.
 ## Scope — what is NOT claimed
 
 This corrects the **genesis seam only**. In the contract, `KnowledgeShardRef`
-(axm-core) and `ConversationShardRef` (axm-chat) are annotated **NOT YET
+(axm-core) and `ConversationShardRef` (axm-chat) were annotated **NOT YET
 VERIFIED** — mirror-side guesses until each edge is wired and reconciled against
 its real surface on its own branch. Correcting genesis is not a claim that the
 stack is corrected. The remaining core objects (`EvidenceEvent`,
 `AttentionFinding`, `ClaimCheckResult`, `PhysicalEvidenceEvent`) are untouched by
 this pass. The `KnowledgeShardRef` edge, when it is built, inherits this one
 documented custody pattern — it does not get to choose a second.
+
+**Status updates since this pass:**
+
+- `KnowledgeShardRef` (axm-core): reconciled on `claude/axm-core-knowledge-edge`
+  (PR #4). Composes over `SealedShard`; observer verifies through the landed
+  custody seam. One custody pattern, as required above.
+- `ConversationShardRef` (axm-chat): reconciled on
+  `claude/session-planning-1h0xlw`. The probe ran a real `axm-chat import`
+  (generic export → sealed shard, namespace `chat/conversation`, publisher
+  `@axm_chat`) and verified it detached with an out-of-band key. Reality: the
+  spoke's output IS a genesis-sealed shard, so the ref now composes over
+  `SealedShard` exactly like `KnowledgeShardRef` (independent `shard_id`,
+  `summary`, and `provenance` fields removed; `recorded_at` maps to the sealed
+  manifest's `metadata.created_at`). One contract-vs-reality mismatch found and
+  documented: axm-chat exports NO shard-reference API (`import_export()` returns
+  counts only), so `ConversationSpoke` is annotated as a consumer-side adapter
+  role, not an axm-chat interface. `conversation_observer.py` inherits the one
+  custody pattern; live-proven against the real probe shard (6 findings, all
+  keyed to genesis ids).
+- `PhysicalEvidenceEvent` / `EmbodiedSource` (axm-embodied): still mirror-side
+  guesses — the last unreconciled edge.

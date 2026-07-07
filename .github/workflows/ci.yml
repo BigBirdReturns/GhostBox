@@ -59,7 +59,10 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}
         run: |
           set -o pipefail
-          python -m pytest tests/ -q | tee pytest-output.txt
+          # The foundry-exit suite is exercised in its own job below (it needs
+          # the Spectra hub + duckdb and tolerates the boto3-gated S3 skip), so
+          # it is excluded here to keep this job's strict no-skip gate honest.
+          python -m pytest tests/ -q --ignore-glob='tests/test_foundry_*' | tee pytest-output.txt
 
       - name: Verify no kernel-gated tests were skipped
         # With the pinned kernel installed, every test (including the
@@ -72,3 +75,43 @@ jobs:
             echo "::error::Kernel-gated tests were skipped even though the pinned axm-genesis kernel was installed. The kernel install likely broke -- see pytest-output.txt above."
             exit 1
           fi
+
+  foundry-exit:
+    name: Foundry exit suite (Python 3.11)
+    # The exit engine lives here now, but its "queryable-through-Spectra" product
+    # tests import axm-core's axiom_runtime (spoke -> hub, the correct direction).
+    # So this job checks out the pinned kernel AND axm-core, installs both plus
+    # the exit's third-party deps, and runs the suite for real. No no-skip gate:
+    # the S3 test is boto3-gated and skips cleanly when boto3/moto are absent.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: GhostBox
+
+      - uses: actions/checkout@v4
+        with:
+          repository: BigBirdReturns/axm-genesis
+          ref: 9074e7fb2e9cedde692b248cdd0c6a805e77d8ac
+          path: axm-genesis
+
+      - uses: actions/checkout@v4
+        with:
+          repository: BigBirdReturns/axm-core
+          path: axm-core
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install kernel, Spectra hub, and the exit
+        run: |
+          python -m pip install --upgrade pip
+          pip install './axm-genesis[mldsa-compat]'
+          pip install -e './axm-core' --no-deps      # provides axiom_runtime (Spectra)
+          pip install -e './GhostBox' --no-deps       # provides foundry_exit
+          pip install pytest blake3 duckdb pyarrow pandas click cryptography PyNaCl
+
+      - name: Run the foundry-exit suite (Spectra product tests run, not skip)
+        working-directory: GhostBox
+        run: python -m pytest tests/test_foundry_*.py -q

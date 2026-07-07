@@ -38,14 +38,21 @@ dependencies = []
 charts = ["matplotlib>=3.5"]
 all = ["matplotlib>=3.5"]
 dev = ["pytest>=7.0"]
+exit = ["blake3", "duckdb>=1.0.0", "pyarrow>=14.0.0", "pandas>=2.0.0", "click>=8.1.0", "cryptography>=41.0.0", "PyNaCl>=1.5.0"]
 
 [project.scripts]
 ghostbox-pltr = "ghostbox_pltr.analyzer:main"
 ghostbox-demo = "ghostbox.integration:demo_integration"
+axm-exit = "foundry_exit.run_ontology_exit:main"
+axm-pipeline-exit = "foundry_exit.run_pipeline_exit:main"
+axm-logic-exit = "foundry_exit.logic_exit:main"
+axm-residual-exit = "foundry_exit.residual_exit:main"
+axm-exit-ship = "foundry_exit.ship_of_theseus:main"
 
 [tool.setuptools.packages.find]
-where = ["src"]
-include = ["axiom*", "screen_ghost*", "dind_stack*", "ghostbox*", "ghostbox_pltr*"]
+where = [".", "src"]
+include = ["axiom*", "screen_ghost*", "dind_stack*", "ghostbox*", "ghostbox_pltr*", "foundry_exit*"]
 
 [tool.setuptools.package-dir]
 "" = "src"
+"foundry_exit" = "foundry_exit"

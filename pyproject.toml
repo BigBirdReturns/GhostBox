@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ghostbox"
 version = "0.8.2"
-description = "Integrated intelligence stack: Screen Ghost + Axiom-KG + DIND + Attention + Sessions + PLTR Analysis"
+description = "Integrated intelligence stack: Screen Ghost + Axiom-KG + DIND + Attention + Sessions + PLTR Analysis + Genesis Custody"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.9"

@@ -58,6 +58,8 @@ Genesis seam only. `KnowledgeShardRef` (axm-core) and `ConversationShardRef`
 (axm-chat) are future feeds — untouched here. ScreenGhost is a future intake
 feed — untouched. No genesis mutation, no PR #1, no mavenOS-replacement claim.
 
+Status update (2026-07-06): ConversationShardRef and KnowledgeShardRef have since been reconciled against their real surfaces elsewhere in the repo (see docs/GENESIS_EDGE_MISMATCHES.md), and ScreenGhost's pixel evidence has its own observer (docs/PIXEL_EVIDENCE_OBSERVER_V0.md). All remain untouched within spine_v0 itself, which stays scoped to the genesis seam only.
+
 ## Genesis live-probe receipts (carried forward, honest)
 
 Established directly against the real kernel in this environment:

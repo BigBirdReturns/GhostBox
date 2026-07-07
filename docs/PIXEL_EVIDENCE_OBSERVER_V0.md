@@ -79,7 +79,7 @@ genesis `shard_id`, the image hash (`img:sha256:…`), and the manifest hash
 | No ScreenGhost / OCR / DOM / clipboard / browser import | **yes** (subprocess-isolated) |
 | Manifest read only after verification | **yes** |
 | Detached record verifies without GhostBox | **PASS** (`axm-verify` on shard bytes + oob pub) |
-| Test suite | **14/14** (repo 51/51) |
+| Test suite | **14/14** (repo 51/51 at the time of this slice; the current total is tracked by CI and docs/EDGE_RECONCILIATION_RUNBOOK.md) |
 
 **Evidence tier of this slice:** observer-over-verified-bundle, proven against a
 real genesis-sealed pixel shard built in-test with the genesis CLI. No OCR, no

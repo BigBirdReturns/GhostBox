@@ -68,7 +68,7 @@ fact. The non-assertions ship inside every record.
 | History append-only; ids deterministic | **yes** |
 | No filesystem access in the layer | **yes** (source-asserted) |
 | End-to-end: seal → custody → observe → review | **PASS** (PNG untouched; detached verify still exit 0) |
-| Test suite | **16/16** (repo 67/67) |
+| Test suite | **16/16** (repo 67/67 at the time of this slice; the current total is tracked by CI and docs/EDGE_RECONCILIATION_RUNBOOK.md) |
 
 **Evidence tier of this slice:** review-workflow-over-verified-observation, proven
 against a real genesis-sealed pixel shard end to end. No OCR, no vision models, no

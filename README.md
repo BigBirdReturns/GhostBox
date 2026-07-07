@@ -4,6 +4,8 @@
 
 **Now with Screen Ghost photonic intake.**
 
+Tests run on the pinned axm-genesis kernel via GitHub Actions (108/108; kernel-gated tests never silently skip in CI).
+
 ```
 Photonic (Screen Ghost)  →  Screenshot → VLM → State  ─┐
                                                        ├→ Semantic Coordinates → Tension → Attention → Decision
@@ -21,6 +23,9 @@ Structured (Adapters)    →  RSS/XBRL/iCal → Parse     ─┘
 | **Attention Geometry** | Where to look (contradiction, velocity, convergence) |
 | **Session Continuity** | Analyst handoff without context loss |
 | **PLTR Analyzer** | Field Zero domain: SEC filings vs narrative |
+| **Genesis Custody Spoke** | Verified provenance for pixel, knowledge, conversation, and physical evidence — every interop edge reconciled against its real surface |
+
+Custody-first observers land via one documented pattern — see docs/EDGE_RECONCILIATION_RUNBOOK.md.
 
 ## Two Intake Modes
 
@@ -181,7 +186,7 @@ Run it for 30 days. Track what it catches. Document the decisions.
 ## What's Next
 
 - XREV integration (reversible decision traces)
-- More Field Zero domains (custody tracking, LinkedIn attention)
+- More Field Zero domains (LinkedIn attention)
 - Web interface for real-time monitoring
 
 ## License

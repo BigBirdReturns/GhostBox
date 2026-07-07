@@ -1,0 +1,74 @@
+# CI for GhostBox.
+#
+# Mirrors the conventions of the axm-genesis kernel's own CI (see
+# https://github.com/BigBirdReturns/axm-genesis/blob/main/.github/workflows/ci.yml)
+# so the two repos stay uniform: same trigger events, same runner, same
+# Python version matrix, same action versions.
+#
+# The suite is kernel-gated: tests behind spine_v0.genesis_cli.kernel_available()
+# skip cleanly when the axm-genesis kernel binaries (axm-verify / axm-build)
+# are not on PATH, and run for real once the kernel is installed. CI installs
+# the pinned kernel deliberately (see comment below) so this job exercises the
+# full suite, not the degraded/skip path -- and it fails outright if anything
+# skips, since that would mean the kernel install silently broke.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Test suite (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install pinned axm-genesis kernel
+        # Pinned by full commit hash, not a tag or branch, per the axm-genesis
+        # ledger v1.0.0 release policy (see axm-genesis RELEASE.md / CHANGELOG.md):
+        # every consumer repo repins this deliberately rather than floating a
+        # tag, so a change in the kernel can never silently change GhostBox's
+        # CI results. Bumping this hash is an intentional, reviewed action.
+        run: |
+          pip install "axm-genesis[mldsa-compat] @ git+https://github.com/BigBirdReturns/axm-genesis.git@9074e7fb2e9cedde692b248cdd0c6a805e77d8ac"
+
+      - name: Install GhostBox (editable, with dev extras)
+        # -e .[dev] makes the src/-based packages (ghostbox, ghostbox_pltr,
+        # axiom, axiom_kg, dind_stack, screen_ghost) importable and pulls in
+        # pytest via the dev extra.
+        run: pip install -e ".[dev]"
+
+      - name: Run test suite
+        # spine_v0 lives at the repo root and is not part of the packaged
+        # distribution (see pyproject.toml's [tool.setuptools.packages.find]),
+        # so it is not made importable by `pip install -e .`. Add the repo
+        # root to PYTHONPATH so `import spine_v0` resolves; src/ is included
+        # too for good measure even though the editable install already
+        # covers it.
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}
+        run: |
+          set -o pipefail
+          python -m pytest tests/ -q | tee pytest-output.txt
+
+      - name: Verify no kernel-gated tests were skipped
+        # With the pinned kernel installed, every test (including the
+        # kernel-gated ones behind spine_v0.genesis_cli.kernel_available())
+        # should run for real. If pytest reports any skips here, the kernel
+        # install above silently broke -- fail loudly instead of letting the
+        # suite pass in a degraded state.
+        run: |
+          if grep -qE "[0-9]+ skipped" pytest-output.txt; then
+            echo "::error::Kernel-gated tests were skipped even though the pinned axm-genesis kernel was installed. The kernel install likely broke -- see pytest-output.txt above."
+            exit 1
+          fi

@@ -257,26 +257,85 @@ class KnowledgeShardRef:
         )
 
 
-@dataclass
+@dataclass(frozen=True)
 class ConversationShardRef:
-    """Reference to a conversation-memory shard produced by axm-chat.
+    """axm-chat's conversation overlay ON a genesis-sealed shard.
 
-    Added beyond the strict dataclass list in the spec so the contract is
-    complete: axm-chat is a named spoke and GhostBox must be able to ingest
-    its output. Modeled as a Ref for the same reason as KnowledgeShardRef.
+    Reconciled against the real axm-chat surface (probe on branch
+    ``claude/session-planning-1h0xlw``): ``axm-chat import`` extracts a
+    conversation and hands candidates to the genesis compiler
+    (``axm_build.compiler_generic.compile_generic_shard``) in ONE pass, so its
+    output *is* a genesis-sealed ``SealedShard`` — namespace
+    ``chat/conversation``, publisher ``@axm_chat``, one ``conversation/{id}``
+    entity plus ``turn/{n}`` entities, and ``has_title`` / ``message_count`` /
+    ``has_turn`` claims, verified detached with an out-of-band key. This ref
+    therefore sits ABOVE that sealed shard, exactly as ``KnowledgeShardRef``
+    sits above axm-core's output: one custody pattern, not a second.
 
-    NOT YET VERIFIED against axm-chat's real surface. Like KnowledgeShardRef,
-    this is a mirror-side guess until the ``axm-chat -> ConversationShardRef``
-    edge is wired on its own branch. Do not treat it as the confirmed axm-chat
-    boundary.
+    Ownership:
+      - genesis owns ``shard_id``, manifest, signatures, Merkle root, the
+        content ids (``e1_`` / ``c1_``), and verification -- all on the
+        embedded ``SealedShard``;
+      - axm-chat owns the conversation extraction and this metadata;
+      - GhostBox observes and annotates later, and never here.
+
+    Reconciliation (guess -> reality):
+      - the independent ``shard_id`` field is gone -- identity comes from the
+        embedded sealed shard (see the ``shard_id`` property) and can never be
+        minted or overridden here;
+      - ``summary`` is gone -- the real spoke emits no summary anywhere; the
+        conversation title lives in the sealed manifest and is read through
+        ``sealed``, never duplicated as ref authority;
+      - ``provenance`` is gone -- it lives on the embedded ``sealed``;
+      - ``recorded_at`` no longer self-mints ``now_utc()``; it maps to the
+        sealed manifest's ``metadata.created_at`` (via ``over``);
+      - ``export_ref`` stays as producer metadata: which raw export file the
+        conversation came from. The real import records it NOWHERE in the
+        sealed shard, so it is not recoverable or verifiable from the shard
+        and must never be trusted as custody.
     """
 
-    shard_id: str
-    spoke: str = "axm-chat"
-    export_ref: Optional[str] = None
-    summary: str = ""
-    recorded_at: str = field(default_factory=now_utc)
-    provenance: ProvenanceState = ProvenanceState.UNTESTED
+    sealed: "SealedShard"  # the genesis-sealed custody object; the ONLY identity/verification source
+    spoke: str = "axm-chat"  # conversation metadata: the producing spoke
+    export_ref: Optional[str] = None  # producer-asserted raw-export reference; metadata, never custody
+    recorded_at: Optional[str] = None  # maps to the sealed manifest's metadata.created_at
+
+    @property
+    def shard_id(self) -> str:
+        """Identity comes from the sealed shard -- never minted or overridden here."""
+        return self.sealed.shard_id
+
+    def verify(self, kernel: "TrustKernel", *, trusted_key: str) -> "VerifyStatus":
+        """Delegate verification to the custody seam on the underlying sealed shard.
+
+        A ConversationShardRef is not a verification path of its own: it
+        verifies the SAME object genesis sealed, through the same
+        ``TrustKernel.verify`` boundary. Custody and trust never move up into
+        the conversation layer.
+        """
+        return kernel.verify(self.sealed, trusted_key=trusted_key)
+
+    @classmethod
+    def over(
+        cls,
+        sealed: "SealedShard",
+        *,
+        spoke: str = "axm-chat",
+        export_ref: Optional[str] = None,
+        recorded_at: Optional[str] = None,
+    ) -> "ConversationShardRef":
+        """Build a conversation overlay over a sealed shard.
+
+        ``recorded_at`` defaults to the sealed shard's ``sealed_at`` (the
+        manifest ``metadata.created_at``), so the record timestamp is never a
+        second source of truth.
+        """
+        return cls(
+            sealed=sealed,
+            spoke=spoke,
+            export_ref=export_ref,
+            recorded_at=recorded_at if recorded_at is not None else sealed.sealed_at,
+        )
 
 
 @dataclass(frozen=True)
@@ -376,20 +435,50 @@ class ClaimCheckResult:
 
 @dataclass
 class PhysicalEvidenceEvent:
-    """What changed in the physical world fast enough to require proof.
-    Emitted by axm-embodied.
+    """One kept frame of physical evidence. Emitted by axm-embodied.
 
-    Event-triggered high-resolution capture with forensic continuity.
-    continuity_ref anchors the non-selective recording chain; a break in that
-    chain is itself a finding, not a silent gap.
+    Reconciled against the real axm-embodied frame-capture surface (probe on
+    branch ``claude/session-planning-1h0xlw``): a real ``FrameCaptureRecorder``
+    session was driven (simulated sensor frames, labeled as sim) and sealed via
+    ``compile_frame_capsule`` into a genesis shard — namespace
+    ``embodied/capture``, publisher ``@axm_embodied``, evidence tier
+    ``physical_capture`` with explicit limits — verified detached with an
+    out-of-band key.
+
+    Reconciliation (guess -> reality):
+      - The custody boundary is the SEALED SHARD, not this event. This event
+        mirrors one ``frame_kept`` record of the sealed capture log —
+        producer-declared facts about what the sensor emitted — and must never
+        be treated as verified physical evidence on its own. Verified
+        observation goes through the physical observer over the ``SealedShard``:
+        one custody pattern, never a second.
+      - ``trigger`` and ``trigger_source`` are BOTH caller-declared: the real
+        recorder refuses a trigger without an explicit reason AND source, and
+        never infers one from the pixels. The guess omitted the source.
+      - ``continuity_ref`` is the frame's chain hash — ``sha256(prev_chain ‖
+        payload_hash ‖ frame_id)``, anchored at a session-bound
+        ``chain_genesis`` — sealed twice in the real capsule (in every
+        ``frames.bin`` record and in the ``frame_kept`` log lines). A break in
+        that chain is itself a finding, not a silent gap.
+      - ``frame_id`` is monotonic across the whole session, kept frames or
+        not, so the gaps between capture windows are visible and declared,
+        never silently spliced. The guess omitted it; reality keys every kept
+        record by it.
+      - ``fidelity`` is gone — nothing in the real surface carries a fidelity
+        field; ``"high"`` asserted a quality nothing measured.
+
+    provenance PROVEN asserts faithful capture of opaque sensor bytes (the
+    recorder never decodes, filters, classifies, or interprets them) — nothing
+    about identity, activity, or platform truth.
     """
 
-    trigger: str
-    sensor: str
-    continuity_ref: str
-    content_hash: str
+    trigger: str          # caller-declared trigger reason; never inferred from pixels
+    trigger_source: str   # caller-declared trigger source (e.g. a PIR sensor id); never inferred
+    sensor: str           # sensor_id of the capturing sensor
+    continuity_ref: str   # this frame's chain hash, anchored at the session chain_genesis
+    content_hash: str     # sha256 of the opaque frame payload bytes
+    frame_id: int         # session-monotonic id; gaps expose what was NOT kept
     captured_at: str = field(default_factory=now_utc)
-    fidelity: str = "high"
     provenance: ProvenanceState = ProvenanceState.PROVEN
     event_id: str = ""
 
@@ -399,9 +488,11 @@ class PhysicalEvidenceEvent:
                 "phys",
                 {
                     "trigger": self.trigger,
+                    "trigger_source": self.trigger_source,
                     "sensor": self.sensor,
                     "continuity_ref": self.continuity_ref,
                     "content_hash": self.content_hash,
+                    "frame_id": self.frame_id,
                     "captured_at": self.captured_at,
                 },
             )
@@ -421,7 +512,15 @@ class EvidenceSource(Protocol):
 
 @runtime_checkable
 class ConversationSpoke(Protocol):
-    """axm-chat. Conversation record into queryable shards."""
+    """axm-chat. Conversation record into queryable shards.
+
+    Reconciled note: axm-chat itself exports NO shard-reference API — its real
+    surface is ``import_export()``, which seals shards into a store directory
+    and returns only counts. This protocol is therefore the shape of a
+    *consumer-side adapter* over that store (scan sealed shard directories,
+    build ``ConversationShardRef.over(sealed)`` for each), not an interface the
+    axm-chat package implements or is expected to grow.
+    """
 
     def emit_conversation_shards(self) -> list[ConversationShardRef]: ...
 
@@ -475,7 +574,17 @@ class ClaimHarness(Protocol):
 
 @runtime_checkable
 class EmbodiedSource(Protocol):
-    """axm-embodied. Physical-world evidence spoke."""
+    """axm-embodied. Physical-world evidence spoke.
+
+    Reconciled note: axm-embodied itself exports NO event-emitting API — its
+    real surface is ``FrameCaptureRecorder`` (writes a capture capsule) plus
+    ``compile_frame_capsule`` (seals it and returns the derived ``sh1_``
+    identity string). This protocol is therefore the shape of a *consumer-side
+    adapter* over the sealed capsule log (read a custody-VERIFIED shard's
+    ``frame_kept`` records, build one ``PhysicalEvidenceEvent`` per kept
+    frame), not an interface the axm-embodied package implements or is
+    expected to grow.
+    """
 
     def emit_physical(self) -> list[PhysicalEvidenceEvent]: ...
 
@@ -528,9 +637,11 @@ if __name__ == "__main__":
 
     phys = PhysicalEvidenceEvent(
         trigger="motion",
+        trigger_source="pir-3",
         sensor="cam-01",
         continuity_ref="chain:0001",
         content_hash="cafebabe",
+        frame_id=1,
         captured_at=fixed,
     )
 

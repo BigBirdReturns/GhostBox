@@ -1,0 +1,102 @@
+<!-- GhostBox — the intelligence layer that watches the incumbent and stages the
+     switch. Self-contained (inline CSS/JS, Google Fonts only). Theme-aware. -->
+<title>GhostBox — watch the incumbent, stage the switch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d1117;--bg2:#111722;--panel:#0f1520;--rule:#1e2733;--rule2:#2a3746;
+    --ink:#e6edf3;--dim:#9fb0c0;--faint:#5b6b7b;
+    --cyan:#39d0d8;--cyan-glow:rgba(57,208,216,.35);--green:#3fb950;--amber:#d29922;--red:#f85149;
+    --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--cond:'Barlow Condensed',sans-serif;
+  }
+  @media (prefers-color-scheme:light){:root{--bg:#f6f8fa;--bg2:#eef1f5;--panel:#fff;--rule:#d5dbe2;--rule2:#c2cbd6;--ink:#111722;--dim:#48566a;--faint:#7a8797;--cyan:#0b8f97;--cyan-glow:rgba(11,143,151,.25);--green:#1a7f37;--amber:#9a6700;--red:#cf222e;}}
+  :root[data-theme="dark"]{--bg:#0d1117;--bg2:#111722;--panel:#0f1520;--rule:#1e2733;--ink:#e6edf3;--dim:#9fb0c0;--faint:#5b6b7b;--cyan:#39d0d8;--green:#3fb950;--amber:#d29922;--red:#f85149;}
+  :root[data-theme="light"]{--bg:#f6f8fa;--bg2:#eef1f5;--panel:#fff;--rule:#d5dbe2;--ink:#111722;--dim:#48566a;--faint:#7a8797;--cyan:#0b8f97;--green:#1a7f37;--amber:#9a6700;--red:#cf222e;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 24px}
+  nav{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:12px}
+  nav .wrap{display:flex;align-items:center;gap:20px;height:46px;flex-wrap:wrap}
+  nav .brand{font-weight:600;letter-spacing:.05em;color:var(--cyan)}
+  nav a{color:var(--dim);text-decoration:none}nav a:hover{color:var(--ink)}
+  header{padding:52px 0 10px}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan)}
+  h1{font-family:var(--cond);font-weight:700;font-size:clamp(32px,5.5vw,58px);line-height:1.0;margin:14px 0 12px;letter-spacing:.01em}
+  h1 em{font-style:normal;color:var(--cyan)}
+  .lede{color:var(--dim);max-width:68ch;font-size:16px}
+  .pipe{font-family:var(--mono);font-size:12.5px;color:var(--dim);background:var(--panel);border:1px solid var(--rule2);border-radius:8px;padding:16px 18px;margin:22px 0;overflow-x:auto;white-space:pre;line-height:1.7}
+  .pipe b{color:var(--cyan);font-weight:500}
+  .cta{display:inline-flex;align-items:center;gap:10px;margin:8px 12px 8px 0;padding:13px 24px;border:1px solid var(--cyan);border-radius:6px;color:var(--cyan);text-decoration:none;font-family:var(--cond);font-size:17px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;background:var(--cyan-glow);transition:.15s}
+  .cta:hover{background:color-mix(in srgb,var(--cyan) 22%,transparent);color:var(--ink)}
+  .cta.ghost{background:transparent;color:var(--dim);border-color:var(--rule2)}
+  .cta.ghost:hover{color:var(--ink);border-color:var(--dim)}
+  section{padding:30px 0;border-top:1px solid var(--rule);margin-top:24px}
+  .sec-label{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
+  h2{font-family:var(--cond);font-weight:700;font-size:30px;margin:0 0 12px}
+  p{color:var(--dim);max-width:72ch;font-size:15px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:18px}
+  .card{background:var(--panel);border:1px solid var(--rule2);border-radius:8px;padding:16px 18px}
+  .card .t{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing:.04em;margin-bottom:6px}
+  .card p{font-size:13.5px;margin:0}
+  .honesty{border-left:2px solid var(--amber);background:color-mix(in srgb,var(--amber) 6%,transparent);padding:13px 16px;font-family:var(--mono);font-size:12px;color:var(--dim);margin:22px 0;border-radius:0 6px 6px 0}
+  code{font-family:var(--mono);font-size:12.5px;background:var(--bg2);padding:2px 6px;border-radius:4px;color:var(--ink)}
+  a.inline{color:var(--cyan);text-decoration:none}a.inline:hover{text-decoration:underline}
+  footer{padding:34px 0 64px;color:var(--faint);font-family:var(--mono);font-size:11px;border-top:1px solid var(--rule);margin-top:24px}
+</style>
+
+<nav><div class="wrap">
+  <span class="brand">GHOSTBOX</span>
+  <a href="#watch">Watch</a>
+  <a href="#switch">The switch</a>
+  <a href="exit-demo.html">Exit demo ▶</a>
+  <a href="ship.html">Ship of Theseus ▶</a>
+  <a href="https://github.com/BigBirdReturns/GhostBox">GitHub</a>
+</div></nav>
+
+<div class="wrap">
+  <header>
+    <div class="kicker">GhostBox · semantic tension analysis · genesis custody</div>
+    <h1>Watch the incumbent.<br><em>Stage the switch.</em></h1>
+    <p class="lede">GhostBox is the intelligence layer of the AXM ecosystem. It reads the systems you depend on — the screen as the API, the filings against the narrative — computes where the tension is, and decides where to look. And when the tension is <em>lock-in</em> — a platform you can't leave — it stages the answer: a sovereign switch, sealed in genesis custody, that outlives the platform.</p>
+    <div style="margin-top:22px">
+      <a class="cta" href="exit-demo.html">▶ Watch the switch — an ontology leaving a silo, sealed</a>
+      <a class="cta ghost" href="ship.html">The Ship of Theseus — replace it plank by plank ▶</a>
+    </div>
+  </header>
+
+  <section id="watch">
+    <div class="sec-label">§01 · What GhostBox does</div>
+    <h2>Observe → tension → attention → decision.</h2>
+    <div class="pipe">Photonic (Screen Ghost)  →  Screenshot → VLM → State  ─┐
+                                                       ├→  <b>Semantic coordinates → Tension → Attention → Decision</b>
+Structured (Adapters)    →  RSS/XBRL/iCal → Parse     ─┘</div>
+    <div class="grid">
+      <div class="card"><div class="t">Screen Ghost</div><p>Photonic intake — the UI is the API. Watch any screen, extract structured state, diff what changed.</p></div>
+      <div class="card"><div class="t">Axiom-KG · DIND</div><p>Semantic coordinate system (9 domain adapters) and tension detection: contradiction, velocity, convergence.</p></div>
+      <div class="card"><div class="t">PLTR Analyzer</div><p>Field Zero domain — the incumbent read directly: SEC filings against the public narrative.</p></div>
+      <div class="card"><div class="t">Genesis Custody Spoke</div><p>Verified provenance for pixel, knowledge, conversation, and physical evidence — every edge reconciled against its real surface, sealed and detached-verifiable.</p></div>
+    </div>
+    <p style="margin-top:16px;font-family:var(--mono);font-size:12.5px">Tests run on the pinned axm-genesis kernel in CI (108/108; kernel-gated tests never silently skip).</p>
+  </section>
+
+  <section id="switch">
+    <div class="sec-label">§02 · The switch</div>
+    <h2>When the tension is lock-in,<br>the answer is an exit.</h2>
+    <p>The deepest tension GhostBox reads is the one you can't act on: a platform that holds your ontology, your data, and your workflows hostage. The <strong style="color:var(--ink)">sovereign switch</strong> is the staged response — pull your ontology and pipelines out of an enterprise silo (reconciled against Palantir's <em>published</em> Foundry API v2 wire shapes), seal them into a genesis shard, and verify them with nothing but the bytes and an out-of-band key. Platform removed. Vendor removed. AXM removed.</p>
+    <div style="margin-top:18px">
+      <a class="cta" href="exit-demo.html">▶ The exit demo — silo → pull → sovereign record</a>
+      <a class="cta ghost" href="ship.html">▶ The whole hull — 9/9 planks, each at its honest tier</a>
+    </div>
+    <div class="honesty">Synthetic throughout — NHS-shaped and enterprise-shaped <em>invented</em> samples, no real tenant, no real data, ever. Reconciled against Palantir's <strong>published</strong> Ontology / Datasets / Orchestration / Actions API v2 wire shapes; <strong>not</strong> run against an authorized live tenant, and no claim of access to or affiliation with Palantir. The channel carries real records only when a data controller with lawful authority decides — never here, never covertly. Proven, not deployed.</div>
+  </section>
+
+  <section>
+    <div class="sec-label">§03 · Where this sits</div>
+    <h2>One spoke of a custody ecosystem.</h2>
+    <p>GhostBox is the intelligence + observation spoke. It seals into the same kernel as everything else — <a class="inline" href="https://github.com/BigBirdReturns/axm-genesis">axm-genesis</a> (the post-quantum custody kernel), with <a class="inline" href="https://bigbirdreturns.github.io/axm-core/">axm-core</a> as the query hub (Spectra), alongside the other spokes. A record sealed here verifies with nothing but its own bytes, twenty or thirty years from now, whether or not GhostBox is still running.</p>
+  </section>
+
+  <footer>GhostBox · watch the incumbent, stage the switch · Proven, not deployed · Synthetic samples only — no real tenant, no real data.</footer>
+</div>

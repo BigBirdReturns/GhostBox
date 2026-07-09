@@ -1,0 +1,1300 @@
+<!doctype html>
+<html lang="en" data-theme="cream">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AXM Surface Acceptance — Physical Availability Demonstration</title>
+<!-- System font stack only — this page makes zero network requests, by design.
+     (House faces Barlow Condensed / IBM Plex render if installed locally; otherwise system equivalents.) -->
+<style>
+:root{
+  --display:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  /* Cream Editorial (default / no-JS fallback) */
+  --bg:#faf9f5; --panel:#ffffff; --panel2:#f0ebe0; --ink:#1a1614; --muted:#6b6a5e;
+  --line:#ddd6c6; --rule:#1a1614; --ember:#b23b2e; --gold:#7d6118; --ok:#54682f;
+  --emberT:rgba(178,59,46,.10); --goldT:rgba(125,97,24,.11); --okT:rgba(84,104,47,.11);
+  --olive:#7C7F57; --btnbg:#1a1614; --btnfg:#faf9f5;
+  --cardshadow:0 1px 3px rgba(26,22,20,.07),0 4px 14px rgba(26,22,20,.05);
+}
+html[data-theme="void"]{
+  /* Dark Ecosystem — frozen tokens: bone/olive/void/ember */
+  --bg:#0D0C09; --panel:#161410; --panel2:#1d1a14; --ink:#ECE7D8; --muted:#9b9e7e;
+  --line:#2b2820; --rule:#55503d; --ember:#d4623f; --gold:#c8a24a; --ok:#9aa06b;
+  --emberT:rgba(194,75,44,.16); --goldT:rgba(200,162,74,.13); --okT:rgba(154,160,107,.13);
+  --olive:#8f9270; --btnbg:#ECE7D8; --btnfg:#0D0C09;
+  --cardshadow:none;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;font-size:16px}
+a{color:var(--ink);text-decoration-color:var(--olive);text-underline-offset:3px}
+a:hover{text-decoration-color:var(--ember)}
+.wrap{max-width:960px;margin:0 auto;padding:36px 24px 80px}
+.mono{font-family:var(--mono)}
+
+/* ---- letterhead: identity + chrome, quiet ---- */
+.letterhead{border-top:3px double var(--rule);border-bottom:1px solid var(--line);padding:14px 0 12px;display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}
+.letterhead .org{font-family:var(--sans);font-weight:600;font-size:12px;letter-spacing:.24em;text-transform:uppercase}
+.letterhead .meta{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right}
+#themeToggle{appearance:none;background:var(--panel);border:1px solid var(--line);border-radius:2px;color:var(--ink);padding:6px 12px;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+#themeToggle:hover{background:var(--panel2);border-color:var(--olive)}
+
+/* stamp: an honest caption, not a siren */
+.stamp{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);border-left:2px solid var(--line);padding:2px 0 2px 10px;margin-top:12px}
+
+/* ---- hero: ONE headline voice ---- */
+.hero{padding:30px 0 4px}
+.hero h1{font-family:var(--display);font-weight:600;font-size:clamp(34px,5.4vw,56px);line-height:1.04;letter-spacing:.005em;margin:0 0 14px;max-width:840px}
+.hero p.lead{font-size:16.5px;max-width:68ch;margin:0;color:var(--ink);opacity:.88}
+.heroact{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:24px 0 10px}
+.heroact .hint{font-family:var(--mono);font-size:11px;color:var(--muted);max-width:52ch}
+
+/* ---- section heads: real headings, tiny number, quiet note ---- */
+.sechead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;border-top:1px solid var(--rule);padding-top:14px;margin:52px 0 18px}
+.secnum{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--olive)}
+.sechead h2{font-family:var(--sans);font-weight:600;font-size:18px;margin:0;letter-spacing:.005em}
+.sechead .note{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+/* ---- verdict: the payload ---- */
+.verdict{border:1px solid var(--line);border-left:4px solid var(--line);border-radius:3px;padding:20px 22px;margin:0 0 16px;background:var(--panel);box-shadow:var(--cardshadow)}
+.verdict.sev-red{border-left-color:var(--ember)}
+.verdict.sev-amber{border-left-color:var(--gold)}
+.verdict.sev-green{border-left-color:var(--ok)}
+.verdict .vkind{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.verdict h2{font-family:var(--display);font-weight:600;font-size:clamp(26px,3.6vw,40px);line-height:1.1;margin:0;letter-spacing:.005em}
+.tallyrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.tallynote{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+
+/* ---- badges & chips: tinted background = status, everywhere ---- */
+.chip,.fkind,.st{display:inline-flex;align-items:center;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:2px;white-space:nowrap}
+.c-red{color:var(--ember);background:var(--emberT)}
+.c-amber{color:var(--gold);background:var(--goldT)}
+.c-green{color:var(--ok);background:var(--okT)}
+.st.pass{color:var(--ok);background:var(--okT)}
+.st.pass_with_gaps{color:var(--gold);background:var(--goldT)}
+.st.fail{color:var(--ember);background:var(--emberT)}
+
+/* ---- finding cards ---- */
+.finding{border:1px solid var(--line);border-left:3px solid var(--line);border-radius:3px;background:var(--panel);box-shadow:var(--cardshadow);padding:16px 18px;margin-bottom:14px}
+.finding.sev-red{border-left-color:var(--ember)}
+.finding.sev-amber{border-left-color:var(--gold)}
+.finding.sev-green{border-left-color:var(--ok)}
+.fkind{margin-bottom:10px}
+.fstatement{margin:0 0 12px;font-size:15.5px;max-width:70ch}
+table{width:100%;border-collapse:collapse;background:var(--panel)}
+th,td{padding:8px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-family:var(--mono);font-size:12px}
+th{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--rule);background:transparent}
+tr:last-child td{border-bottom:1px solid var(--line)}
+.evtable th,.evtable td{font-size:11.5px}
+.shiftact{border:1px solid var(--line);border-left:3px solid var(--rule);background:var(--panel2);padding:10px 12px;margin-top:12px;font-size:13.5px;max-width:70ch;border-radius:2px}
+.shiftact b{display:block;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.caveats{margin:10px 0 0;padding-left:18px;color:var(--muted);font-size:13px}
+.caveats li{margin:2px 0}
+.tier{font-family:var(--mono);color:var(--olive)}
+
+/* ---- summary stat boxes: big numbers scan ---- */
+.summary{display:flex;gap:12px;flex-wrap:wrap;align-items:stretch;margin:0 0 20px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:3px;box-shadow:var(--cardshadow);padding:12px 18px;min-width:130px}
+.box b{display:block;font-family:var(--display);font-weight:600;font-size:36px;line-height:1.05}
+.box.n-ok b{color:var(--ok)} .box.n-gold b{color:var(--gold)} .box.n-red b{color:var(--ember)}
+.box span{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.boxnote{align-self:center;color:var(--muted);font-size:13px;max-width:300px}
+
+/* ---- asks ---- */
+.asks{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:3px;background:var(--panel);box-shadow:var(--cardshadow)}
+.asks li{padding:12px 14px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:26px 1fr;gap:10px;font-size:14.5px}
+.asks li:last-child{border-bottom:0}
+.asks .n{font-family:var(--mono);font-size:12px;color:var(--olive);padding-top:2px}
+.asks .src{display:block;font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:3px}
+
+/* ---- the interface: unmistakably operable ---- */
+.drop{border:2px dashed var(--olive);border-radius:6px;background:var(--panel);padding:30px;text-align:center;transition:.15s}
+.drop.drag{border-color:var(--ember);background:var(--panel2)}
+.drop b{display:block;font-size:18px;font-weight:600;margin-bottom:4px}
+.drop small{color:var(--muted);font-family:var(--mono);font-size:11px}
+input[type=file]{display:none}
+.btnrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;justify-content:center}
+button,.fakebtn{appearance:none;border:1px solid transparent;background:var(--btnbg);color:var(--btnfg);border-radius:3px;padding:11px 18px;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.04em;cursor:pointer;display:inline-flex;align-items:center;gap:8px;text-decoration:none;transition:.12s}
+button:hover:not(:disabled),.fakebtn:hover{filter:brightness(1.12)}
+html[data-theme="void"] button:hover:not(:disabled),html[data-theme="void"] .fakebtn:hover{filter:brightness(.94)}
+button.secondary,.fakebtn.secondary{background:var(--panel);color:var(--ink);border:1px solid var(--rule);filter:none}
+button.secondary:hover:not(:disabled),.fakebtn.secondary:hover{background:var(--panel2);filter:none}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,.fakebtn:focus-visible,#themeToggle:focus-visible{outline:2px solid var(--olive);outline-offset:2px}
+.filelist{font-family:var(--mono);font-size:11.5px;background:var(--panel2);border:1px solid var(--line);border-radius:2px;padding:10px 12px;max-height:120px;overflow:auto;color:var(--ink);margin-top:12px;text-align:left}
+.privline{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:10px;text-align:center}
+.loadstatus{font-family:var(--mono);font-size:11.5px;color:var(--ok);margin-top:12px}
+.loadstatus:empty{display:none}
+
+/* ---- boundary & footer ---- */
+.boundary{border:1px solid var(--line);border-radius:3px;background:var(--panel);box-shadow:var(--cardshadow);padding:16px 18px;max-width:70ch}
+.boundary p{margin:0 0 8px} .boundary p:last-child{margin:0}
+.footer{margin-top:44px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:13px;max-width:70ch}
+
+/* ---- details ---- */
+details{border:1px solid var(--line);border-radius:3px;background:var(--panel);margin-top:14px}
+details summary{cursor:pointer;font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;padding:12px 14px;color:var(--muted)}
+details summary:hover{color:var(--ink)}
+details[open] summary{border-bottom:1px solid var(--line)}
+.detail{padding:14px 16px;border-bottom:1px solid var(--line)}
+.detail:last-child{border-bottom:0}
+.detail h3{margin:0 0 6px;font-size:14.5px;font-family:var(--sans);font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.detail p{margin:4px 0;color:var(--ink);opacity:.85;font-size:13px}
+.detail code{font-family:var(--mono);font-size:11px;word-break:break-all;background:var(--panel2);padding:1px 4px}
+.detail .meaning{background:var(--panel2);border:1px solid var(--line);padding:8px 10px;margin:8px 0;font-size:13px;border-radius:2px}
+.detail .nextask{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--olive);padding:8px 10px;margin:8px 0;font-size:13px;border-radius:2px}
+.detail ul{margin:6px 0 0;padding-left:18px;color:var(--muted);font-size:13px}
+.hidden{display:none}
+
+@media(max-width:720px){.letterhead{flex-direction:column}.letterhead .meta{text-align:left}.sechead .note{margin-left:0;width:100%}}
+@media print{
+  html,html[data-theme="void"]{--bg:#ffffff;--panel:#ffffff;--panel2:#f0ebe0;--ink:#1a1614;--muted:#6b6a5e;--line:#ddd6c6;--rule:#1a1614;--ember:#b23b2e;--gold:#7d6118;--ok:#54682f;--emberT:rgba(178,59,46,.10);--goldT:rgba(125,97,24,.11);--okT:rgba(84,104,47,.11);--olive:#7C7F57;--btnbg:#1a1614;--btnfg:#ffffff;--cardshadow:none}
+  #themeToggle,.heroact,section[data-screen-label="Load surfaces"]{display:none}
+  body{font-size:12px}
+  .wrap{padding:0}
+  .finding,.verdict,.asks,.boundary,.box{break-inside:avoid}
+}
+</style>
+<script>
+(function(){
+  var t = null;
+  try { t = localStorage.getItem("axm_v3_theme"); } catch(e){}
+  if (t !== "cream" && t !== "void") t = (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) ? "void" : "cream";
+  document.documentElement.dataset.theme = t;
+})();
+</script>
+</head>
+<body>
+<div class="wrap">
+
+<header data-screen-label="Letterhead">
+  <div class="letterhead">
+    <div class="org">AXM · Surface Acceptance — Standalone Demonstration</div>
+    <button id="themeToggle" type="button">theme</button>
+  </div>
+  <div class="stamp">Dummy data · not CUI · not a system of record · not a deployed integration</div>
+
+  <div class="hero" id="heroFinding">
+    <h1>Administrative availability is not physical availability.</h1>
+    <p class="lead">This standalone page reads ordinary inventory, maintenance, and due-in exports — Excel, CSV, JSON — and checks whether a part the record says is in stock could actually return an asset to service. Five dummy files are already loaded below as a worked example; drop in your own and every finding recomputes.</p>
+  </div>
+</header>
+
+<section id="try" data-screen-label="Load surfaces">
+  <div class="sechead"><span class="secnum">01</span><h2>Load surfaces</h2><span class="note">five dummy files are pre-loaded as a worked example — replace them with your own</span></div>
+  <div id="drop" class="drop">
+    <b>Drag your inventory, maintenance, or due-in exports here</b>
+    <small>xlsx · csv · json · txt/log · screenshots — imperfect exports are expected</small>
+    <div class="btnrow">
+      <label class="fakebtn secondary" for="fileInput">Choose files</label>
+      <button id="demoBtn" class="secondary" type="button">Restore the worked example</button>
+    </div>
+    <input id="fileInput" type="file" multiple accept=".xlsx,.xlsm,.csv,.tsv,.json,.jsonl,.txt,.md,.log,.png,.jpg,.jpeg,.webp,.bmp,.gif,.tiff,.svg">
+  </div>
+  <div id="selected" class="filelist hidden"></div>
+  <div id="loadStatus" class="loadstatus" role="status"></div>
+  <div class="btnrow">
+    <button id="analyzeBtn" type="button" disabled>Analyze surfaces</button>
+    <button id="clearBtn" class="secondary" type="button">Clear</button>
+    <button id="downloadJsonBtn" class="secondary" type="button" disabled>Export JSON report</button>
+    <button id="downloadHtmlBtn" class="secondary" type="button" disabled>Export HTML report</button>
+  </div>
+  <p class="privline">Runs offline in this browser — no install, no network. Files are hashed (SHA-256) and read in memory; nothing leaves this machine.</p>
+</section>
+
+<section data-screen-label="Finding">
+  <div class="sechead"><span class="secnum">02</span><h2>Finding</h2><span class="note" id="findingSrc">derived from built-in dummy data — no real unit is described</span></div>
+  <div id="findings"></div>
+</section>
+
+<section data-screen-label="Surface acceptance">
+  <div class="sechead"><span class="secnum">03</span><h2>Surface acceptance</h2><span class="note">what passed, what failed, and why</span></div>
+  <div class="summary" id="summary"></div>
+  <div id="tableWrap"></div>
+  <details>
+    <summary>Per-surface detail — fields, hashes, gaps, next asks</summary>
+    <div id="details"></div>
+  </details>
+</section>
+
+<section data-screen-label="What we need to get started">
+  <div class="sechead"><span class="secnum">04</span><h2>What we need to get started</h2><span class="note">asks generated from the gaps above</span></div>
+  <ol class="asks" id="asks"></ol>
+</section>
+
+<section data-screen-label="Boundary">
+  <div class="sechead"><span class="secnum">05</span><h2>Boundary</h2><span class="note">what this demonstration does not claim</span></div>
+  <div class="boundary">
+    <p><b>Honesty boundary.</b> This standalone page is the intake acceptance harness. It does not mint Genesis shards or sign with <span class="mono">axm-hybrid1</span>. Surfaces that pass here are candidates for custody, not truth — promotion into sealing and detached verification happens in the AXM kernel, after intake.</p>
+    <p><b>Standing rule.</b> A missing field does not kill the demonstration. Missing fields lower the evidence tier or create a declared gap. Human review routes attention; it does not convert weak evidence into stronger evidence.</p>
+  </div>
+</section>
+
+<section data-screen-label="The system behind this page">
+  <div class="sechead"><span class="secnum">06</span><h2>The system behind this page</h2><span class="note">every property below is live — all demo data synthetic; proven, not deployed</span></div>
+  <ol class="asks">
+    <li><span class="n">↳</span><span><a href="./">GhostBox</a> — this page's host: watch the incumbent, stage the switch.
+      <span class="src">the <a href="exit-demo.html">exit demo</a> shows an export leaving a vendor silo and sealing into a sovereign record; the <a href="ship.html">Ship of Theseus</a> shows a nine-plank vendor workflow sealed at each plank's honest tier</span></span></li>
+    <li><span class="n">↳</span><span><a href="https://github.com/BigBirdReturns/axm-genesis">axm-genesis</a> — the frozen kernel underneath everything: sealed shards signed Ed25519 ‖ ML-DSA-44, verifiable offline against the record's own bytes and an out-of-band key.
+      <span class="src">this is the custody path surfaces are promoted into after intake</span></span></li>
+    <li><span class="n">↳</span><span><a href="https://bigbirdreturns.github.io/axm-core/">axm-core</a> — the hub: the Spectra query runtime, SQL over sealed shards with the custody gate in the read path.</span></li>
+    <li><span class="n">↳</span><span><a href="https://bigbirdreturns.github.io/axm-console/">axm-console</a> — the operator cockpit: one CLI drives capture → seal → verify → ask and returns receipts.</span></li>
+    <li><span class="n">↳</span><span><a href="https://bigbirdreturns.github.io/axm-fleet/">axm-fleet</a> — the fleet-lifecycle spoke, pinned to the v1 kernel.
+      <span class="src"><a href="https://bigbirdreturns.github.io/axm-sfn/">axm-sfn</a>, the hardware-custody spoke, is its supply-side sibling</span></span></li>
+    <li><span class="n">↳</span><span><a href="https://bigbirdreturns.github.io/axm-aide/">axm-aide</a> — the personal spoke: custody of memory, with human review routing attention rather than adjudicating truth.</span></li>
+  </ol>
+</section>
+
+<p class="footer">If a finding above does not match operational reality when run against your own exports, that mismatch is the most valuable output this page can produce — it identifies exactly which record, field, or timestamp is misrepresenting the physical state.</p>
+</div>
+
+<script>
+"use strict";
+
+/* ============ field model (unchanged from v2) ============ */
+const FIELD_SYNONYMS = {
+  item_id: ["item_id","part_id","nsn","sku","material","material_id","part_number","national_stock_number"],
+  asset_id: ["asset_id","tail_number","equipment_id","serial_number","vehicle_id","node_id","aircraft_id"],
+  location: ["location","site","warehouse","bin","supply_node","shop","base"],
+  on_hand: ["on_hand","qty_on_hand","quantity_on_hand","count","stock_on_hand","oh"],
+  serviceable_qty: ["serviceable_qty","serviceable","available_qty","ready_qty","usable_qty"],
+  allocated_qty: ["allocated_qty","reserved_qty","committed_qty","allocated","reserved"],
+  due_in_qty: ["due_in_qty","due_in","incoming_qty","inbound_qty"],
+  as_of_date: ["as_of_date","snapshot_date","timestamp","date","recorded_at","updated_at"],
+  work_order_id: ["work_order_id","wo_id","job_id","maintenance_id","mx_id","ticket_id"],
+  status: ["status","state","work_status","maintenance_status","condition"],
+  required_part_id: ["required_part_id","needed_part","part_required","part_id","nsn","material_id"],
+  blocking_reason: ["blocking_reason","reason","delay_reason","nmc_reason","hold_reason"],
+  requisition_id: ["requisition_id","req_id","due_in_id","po_id","order_id","document_number"],
+  quantity: ["quantity","qty","request_qty","ordered_qty"],
+  due_date: ["due_date","eta","expected_date","delivery_date","need_by_date"],
+  source_record_id: ["source_record_id","record_id","document_id","file_id","report_id"],
+  claim: ["claim","claimed_state","statement","finding"],
+  evidence_pointer: ["evidence_pointer","row_ref","cell_ref","page","line","url","screenshot_ref"],
+  reviewer_role: ["reviewer_role","reviewer","actor_role","role"],
+  disposition: ["disposition","decision","review_status"],
+  reason: ["reason","rationale","comment","notes"]
+};
+
+const SURFACE_RULES = {
+  inventory: {
+    requiredAny: [["item_id"], ["on_hand","serviceable_qty"]],
+    recommended: ["location","allocated_qty","as_of_date"],
+    tier: "inventory_snapshot",
+    passesAs: "Physical availability candidate: inventory position"
+  },
+  maintenance: {
+    requiredAny: [["work_order_id"], ["asset_id"], ["status"]],
+    recommended: ["required_part_id","blocking_reason","as_of_date"],
+    tier: "maintenance_event",
+    passesAs: "Physical availability candidate: maintenance/work-order state"
+  },
+  due_in: {
+    requiredAny: [["requisition_id"], ["item_id","required_part_id"], ["quantity"]],
+    recommended: ["due_date","status","location"],
+    tier: "movement_or_due_in",
+    passesAs: "Constraint candidate: inbound supply / due-in"
+  },
+  claim_evidence: {
+    requiredAny: [["claim"], ["source_record_id"], ["evidence_pointer"]],
+    recommended: ["reviewer_role","disposition","reason"],
+    tier: "claim_to_evidence_link",
+    passesAs: "AXM proof candidate: claim linked to source evidence"
+  },
+  review: {
+    requiredAny: [["disposition"], ["reviewer_role"]],
+    recommended: ["claim","reason","source_record_id"],
+    tier: "human_review_record",
+    passesAs: "Human review candidate: attention routing, not truth adjudication"
+  }
+};
+
+const IMG_EXTS = new Set(["png","jpg","jpeg","webp","bmp","gif","tiff","svg"]);
+const TEXT_EXTS = new Set(["txt","md","log"]);
+const CSV_EXTS = new Set(["csv","tsv"]);
+const JSON_EXTS = new Set(["json","jsonl"]);
+const XLSX_EXTS = new Set(["xlsx","xlsm"]);
+
+let currentFiles = [];
+let lastResults = [];
+let lastFindings = [];
+let isDemoData = true;
+
+const el = id => document.getElementById(id);
+const drop = el("drop");
+const fileInput = el("fileInput");
+
+function scrollToResults(){
+  const t = el("findings");
+  if (!t) return;
+  const y = t.getBoundingClientRect().top + window.scrollY - 90;
+  window.scrollTo({top: y, behavior: "smooth"});
+}
+
+fileInput.addEventListener("change", () => setFiles([...fileInput.files], false));
+drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("drag"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("drag"));
+drop.addEventListener("drop", e => {
+  e.preventDefault();
+  drop.classList.remove("drag");
+  setFiles([...e.dataTransfer.files], false);
+});
+el("clearBtn").addEventListener("click", clearAll);
+el("analyzeBtn").addEventListener("click", async () => { await analyzeCurrentFiles(); scrollToResults(); });
+el("downloadJsonBtn").addEventListener("click", downloadJson);
+el("downloadHtmlBtn").addEventListener("click", downloadHtml);
+el("demoBtn").addEventListener("click", async () => { setFiles(makeDemoFiles(), true); await analyzeCurrentFiles(); scrollToResults(); });
+
+function setFiles(files, demo){
+  currentFiles = files;
+  isDemoData = !!demo;
+  el("analyzeBtn").disabled = !files.length;
+  const box = el("selected");
+  if (!files.length) {
+    box.classList.add("hidden");
+    box.textContent = "";
+    return;
+  }
+  box.classList.remove("hidden");
+  box.innerHTML = files.map(f => escapeHtml(f.name) + " · " + formatBytes(f.size)).join("<br>");
+}
+
+function clearAll(){
+  currentFiles = [];
+  lastResults = [];
+  lastFindings = [];
+  fileInput.value = "";
+  setFiles([], false);
+  el("summary").innerHTML = "";
+  el("tableWrap").innerHTML = "";
+  el("details").innerHTML = "";
+  el("asks").innerHTML = "";
+  el("findings").innerHTML = '<div class="finding sev-amber"><div class="fkind c-amber">No surfaces loaded</div><p class="fstatement" style="margin:0">Restore the worked example or drop your own exports in section 01 above to produce a finding.</p></div>';
+  el("downloadJsonBtn").disabled = true;
+  el("downloadHtmlBtn").disabled = true;
+  el("loadStatus").textContent = "";
+}
+
+async function analyzeCurrentFiles(){
+  if (!currentFiles.length) return;
+  el("analyzeBtn").disabled = true;
+  el("analyzeBtn").textContent = "Analyzing...";
+  try {
+    lastResults = [];
+    for (const file of currentFiles) {
+      lastResults.push(await analyzeFile(file));
+    }
+    renderAll(lastResults);
+    el("loadStatus").textContent = isDemoData
+      ? "Loaded and analyzed " + lastResults.length + " built-in dummy surfaces — the worked example. Everything below derives from them."
+      : "Analyzed " + lastResults.length + " file(s) — results updated below ↓";
+    el("downloadJsonBtn").disabled = false;
+    el("downloadHtmlBtn").disabled = false;
+  } catch (err) {
+    alert("Analysis failed: " + (err && err.message ? err.message : String(err)));
+  } finally {
+    el("analyzeBtn").textContent = "Analyze surfaces";
+    el("analyzeBtn").disabled = !currentFiles.length;
+  }
+}
+
+/* ============ per-file analysis ============ */
+async function analyzeFile(file){
+  const ext = getExt(file.name);
+  const base = {
+    fileName: file.name,
+    extension: ext,
+    sizeBytes: file.size,
+    sha256: await sha256File(file),
+    analyzedAt: new Date().toISOString()
+  };
+
+  if (CSV_EXTS.has(ext)) {
+    const text = await file.text();
+    const rows = parseDelimited(text, ext === "tsv" ? "\t" : ",");
+    const headers = rows.length ? rows[0] : [];
+    const dataRows = rows.slice(1).filter(r => r.some(x => String(x || "").trim()));
+    const res = scoreTable(headers, dataRows.length, stem(file.name));
+    res.records = buildRecords(headers, dataRows);
+    return {...base, surfaces: [{...res, sheet: null}]};
+  }
+
+  if (XLSX_EXTS.has(ext)) {
+    return {...base, surfaces: await analyzeXlsx(file)};
+  }
+
+  if (JSON_EXTS.has(ext)) {
+    try {
+      if (ext === "jsonl") {
+        const items = (await file.text()).split(/\r?\n/).filter(x => x.trim()).map(x => JSON.parse(x));
+        return {...base, surfaces: [{...detectJsonShape(items), sheet: null}]};
+      }
+      const obj = JSON.parse(await file.text());
+      return {...base, surfaces: [{...detectJsonShape(obj), sheet: null}]};
+    } catch (err) {
+      return {...base, surfaces: [failSurface("json", "malformed_json", "JSON parse failed: " + err.message, ["Fix the JSON or provide it as a verbatim source document."])]};
+    }
+  }
+
+  if (IMG_EXTS.has(ext)) {
+    const dims = await imageDimensions(file).catch(() => null);
+    return {...base, surfaces: [{
+      sheet: null,
+      status: "PASS_WITH_GAPS",
+      surfaceType: "screenshot_or_image",
+      evidenceTierCandidate: "pixel_capture",
+      passesAs: "Opaque rendered-surface evidence candidate",
+      rowsCount: 1,
+      columnsDetected: [],
+      canonicalFieldsDetected: [],
+      missingMinimumGroups: [],
+      missingRecommendedFields: ["source_system","capture_time","visible_context"],
+      reason: "Image can be hashed and preserved as pixel evidence" + (dims ? ` (${dims.width}×${dims.height}).` : "."),
+      limitations: [
+        "No OCR or semantic truth is claimed at this tier.",
+        "It proves bytes were provided to the intake harness, not what the pixels mean.",
+        "A human-gated annotation layer is required before content claims are made."
+      ]
+    }]};
+  }
+
+  if (TEXT_EXTS.has(ext)) {
+    const lines = (await file.text()).split(/\r?\n/).filter(x => x.trim()).length;
+    return {...base, surfaces: [{
+      sheet: null,
+      status: "PASS_WITH_GAPS",
+      surfaceType: "text_or_report",
+      evidenceTierCandidate: "source_record",
+      passesAs: "Verbatim report/log evidence candidate",
+      rowsCount: lines,
+      columnsDetected: [],
+      canonicalFieldsDetected: [],
+      missingMinimumGroups: [],
+      missingRecommendedFields: ["claim_mapping","source_record_id"],
+      reason: "Text can be preserved as verbatim source evidence.",
+      limitations: ["Needs extraction or human mapping before operational claims can be checked."]
+    }]};
+  }
+
+  return {...base, surfaces: [failSurface("unknown", "unsupported", "Unsupported file type: " + ext, ["Export to CSV, XLSX, JSON, text, or provide a screenshot/image."])]};
+}
+
+function normalizeHeader(s){
+  return String(s ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+}
+
+function canonicalizeColumns(columns){
+  const normed = columns.map(normalizeHeader).filter(Boolean);
+  const reverse = {};
+  for (const [canon, names] of Object.entries(FIELD_SYNONYMS)) {
+    for (const n of normed) {
+      if (names.includes(n) && !reverse[canon]) reverse[canon] = n;
+    }
+  }
+  return {normed, reverse};
+}
+
+function buildRecords(headers, dataRows){
+  const normed = headers.map(normalizeHeader);
+  return dataRows.slice(0, 2000).map((r, i) => {
+    const o = {__row: i + 2};
+    normed.forEach((h, ci) => { if (h) o[h] = r[ci]; });
+    return o;
+  });
+}
+
+function scoreTable(columns, rowsCount, surfaceHint){
+  const {normed, reverse} = canonicalizeColumns(columns);
+  const candidates = [];
+  for (const [surface, rule] of Object.entries(SURFACE_RULES)) {
+    const missingMin = [];
+    let reqHits = 0;
+    for (const group of rule.requiredAny) {
+      const hit = group.some(g => reverse[g]);
+      if (hit) reqHits++;
+      else missingMin.push(group);
+    }
+    const missingRec = rule.recommended.filter(r => !reverse[r]);
+    let score = reqHits * 3 + rule.recommended.filter(r => reverse[r]).length;
+    if (surfaceHint && surfaceHint.toLowerCase().includes(surface)) score += 2;
+    candidates.push({score, surface, hardOk: missingMin.length === 0, missingMin, missingRec, rule});
+  }
+  candidates.sort((a,b) => b.score - a.score);
+  const best = candidates[0];
+
+  let status, reason;
+  if (rowsCount === 0) {
+    status = "FAIL";
+    reason = "No data rows detected.";
+  } else if (best.hardOk) {
+    if (best.missingRec.length) {
+      status = "PASS_WITH_GAPS";
+      reason = "Minimum fields are present, but useful context is missing.";
+    } else {
+      status = "PASS";
+      reason = "Required and recommended fields are present.";
+    }
+  } else {
+    status = "FAIL";
+    reason = "Missing minimum fields for the best-matching surface.";
+  }
+
+  return {
+    status,
+    surfaceType: best.surface,
+    evidenceTierCandidate: best.rule.tier,
+    passesAs: best.rule.passesAs,
+    rowsCount,
+    columnsDetected: normed,
+    canonicalFieldsDetected: Object.keys(reverse).sort(),
+    fieldMap: reverse,
+    missingMinimumGroups: best.missingMin,
+    missingRecommendedFields: best.missingRec,
+    reason,
+    limitations: limitationsFor(status, best.surface, best.missingRec)
+  };
+}
+
+function limitationsFor(status, surface, missingRec){
+  const limits = [];
+  if (status === "FAIL") limits.push("Cannot promote this surface without either a better export or a human-provided mapping.");
+  if ((surface === "inventory" || surface === "due_in") && missingRec.includes("as_of_date")) limits.push("Without a timestamp/snapshot date, AXM can inspect structure but cannot prove when the state was true.");
+  if (surface === "inventory" && missingRec.includes("allocated_qty")) limits.push("Without allocation/reservation fields, on-hand quantity may overstate physical availability.");
+  if (surface === "maintenance" && missingRec.includes("required_part_id")) limits.push("Without required-part linkage, AXM may identify blocked work but not the supply constraint path.");
+  if (surface === "claim_evidence") limits.push("This can support proof traceability, but it does not by itself prove the operational claim is true.");
+  if (surface === "review") limits.push("Human review routes attention; it is not a machine truth verdict.");
+  return limits;
+}
+
+function failSurface(surfaceType, tier, reason, limitations){
+  return {
+    sheet: null,
+    status: "FAIL",
+    surfaceType,
+    evidenceTierCandidate: tier,
+    passesAs: "",
+    rowsCount: 0,
+    columnsDetected: [],
+    canonicalFieldsDetected: [],
+    missingMinimumGroups: [],
+    missingRecommendedFields: [],
+    reason,
+    limitations
+  };
+}
+
+function parseDelimited(text, delimiter){
+  const rows = [];
+  let row = [], cell = "", inQuotes = false;
+  for (let i=0; i<text.length; i++) {
+    const ch = text[i], next = text[i+1];
+    if (ch === '"' && inQuotes && next === '"') { cell += '"'; i++; continue; }
+    if (ch === '"') { inQuotes = !inQuotes; continue; }
+    if (ch === delimiter && !inQuotes) { row.push(cell); cell = ""; continue; }
+    if ((ch === "\n" || ch === "\r") && !inQuotes) {
+      if (ch === "\r" && next === "\n") i++;
+      row.push(cell); rows.push(row); row = []; cell = ""; continue;
+    }
+    cell += ch;
+  }
+  if (cell.length || row.length) { row.push(cell); rows.push(row); }
+  return rows.filter(r => r.some(x => String(x).trim()));
+}
+
+function detectJsonShape(obj){
+  if (obj && typeof obj === "object" && !Array.isArray(obj) && Array.isArray(obj.data)) {
+    const first = obj.data[0] || {};
+    const keys = first && typeof first === "object" ? Object.keys(first) : [];
+    const probe = JSON.stringify(obj).slice(0, 4000);
+    const looksOntology = keys.some(k => ["apiName","displayName","properties"].includes(k)) || probe.includes("objectTypes");
+    if (looksOntology) {
+      return {
+        status: "PASS_WITH_GAPS",
+        surfaceType: "ontology_or_api_capture",
+        evidenceTierCandidate: "foundry_ontology_wire_shape_reconciled",
+        passesAs: "Vendor-detached model/ontology capture candidate",
+        rowsCount: obj.data.length,
+        columnsDetected: keys.map(normalizeHeader),
+        canonicalFieldsDetected: Object.keys(canonicalizeColumns(keys).reverse).sort(),
+        missingMinimumGroups: [],
+        missingRecommendedFields: ["source_system","capture_time"],
+        reason: "Recognized structured ontology/API list response.",
+        limitations: [
+          "This preserves wire-shape structure and verbatim bytes; it does not prove live-tenant authority.",
+          "If the capture is partial, instance counts must be declared as partial, not hidden."
+        ]
+      };
+    }
+    return {
+      status: "PASS_WITH_GAPS",
+      surfaceType: "api_capture",
+      evidenceTierCandidate: "api_list_capture",
+      passesAs: "Structured API export candidate",
+      rowsCount: obj.data.length,
+      columnsDetected: keys.map(normalizeHeader),
+      canonicalFieldsDetected: Object.keys(canonicalizeColumns(keys).reverse).sort(),
+      missingMinimumGroups: [],
+      missingRecommendedFields: ["source_system","capture_time"],
+      reason: "Recognized structured JSON list response.",
+      limitations: ["Needs source-system name and capture timestamp for stronger provenance."]
+    };
+  }
+  if (Array.isArray(obj) && obj.every(x => x && typeof x === "object" && !Array.isArray(x))) {
+    const keys = Array.from(new Set(obj.slice(0,20).flatMap(x => Object.keys(x))));
+    const res = scoreTable(keys, obj.length);
+    res.reason = "Recognized JSON array of row-like objects. " + res.reason;
+    res.records = obj.slice(0, 2000).map((x, i) => {
+      const o = {__row: i + 1, __rowWord: "record"};
+      for (const [k, v] of Object.entries(x)) o[normalizeHeader(k)] = v;
+      return o;
+    });
+    return res;
+  }
+  return {
+    status: "PASS_WITH_GAPS",
+    surfaceType: "raw_json_document",
+    evidenceTierCandidate: "source_record",
+    passesAs: "Verbatim source evidence candidate",
+    rowsCount: 1,
+    columnsDetected: [],
+    canonicalFieldsDetected: [],
+    missingMinimumGroups: [],
+    missingRecommendedFields: ["source_system","record_type"],
+    reason: "JSON is valid but does not look like a known table/export shape.",
+    limitations: ["Can be sealed as source evidence, but needs a mapping to produce operational findings."]
+  };
+}
+
+/* ============ XLSX (ZIP + DecompressionStream) ============ */
+async function analyzeXlsx(file){
+  try {
+    if (typeof DecompressionStream === "undefined") {
+      return [failSurface("excel_workbook", "xlsx_unreadable_in_this_browser", "This browser cannot decompress XLSX files offline.", ["Use current Chrome/Edge, or export the sheet to CSV."])];
+    }
+    const ab = await file.arrayBuffer();
+    const zip = parseZip(new Uint8Array(ab));
+    const entries = {};
+    for (const e of zip.entries) entries[e.name] = e;
+
+    const sharedStrings = entries["xl/sharedStrings.xml"] ? parseSharedStrings(await unzipEntry(zip.bytes, entries["xl/sharedStrings.xml"])) : [];
+    const sheetNames = {};
+    if (entries["xl/workbook.xml"] && entries["xl/_rels/workbook.xml.rels"]) {
+      Object.assign(sheetNames, parseWorkbookSheetNames(
+        await unzipEntry(zip.bytes, entries["xl/workbook.xml"]),
+        await unzipEntry(zip.bytes, entries["xl/_rels/workbook.xml.rels"])
+      ));
+    }
+
+    const sheetPaths = Object.keys(entries).filter(n => /^xl\/worksheets\/sheet\d+\.xml$/.test(n)).sort();
+    const surfaces = [];
+    for (const path of sheetPaths) {
+      const xmlText = textDecode(await unzipEntry(zip.bytes, entries[path]));
+      const parsed = parseWorksheet(xmlText, sharedStrings);
+      const name = sheetNames[path] || path.replace("xl/worksheets/","").replace(".xml","");
+      const res = scoreTable(parsed.headers, parsed.rows.length, name);
+      res.records = buildRecords(parsed.headers, parsed.rows);
+      surfaces.push({...res, sheet: name});
+    }
+    if (!surfaces.length) return [failSurface("excel_workbook", "xlsx_no_worksheets", "No worksheet XML files were found.", ["Provide a standard XLSX workbook or export to CSV."])];
+    return surfaces;
+  } catch (err) {
+    return [failSurface("excel_workbook", "xlsx_parse_failed", "XLSX parse failed: " + err.message, ["Export to CSV if the workbook uses unsupported compression or structure."])];
+  }
+}
+
+function parseZip(bytes){
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let eocd = -1;
+  const min = Math.max(0, bytes.length - 66000);
+  for (let i = bytes.length - 22; i >= min; i--) {
+    if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error("ZIP end-of-central-directory not found");
+  const count = dv.getUint16(eocd + 10, true);
+  const cdOffset = dv.getUint32(eocd + 16, true);
+  const entries = [];
+  let off = cdOffset;
+  for (let i=0; i<count; i++) {
+    if (dv.getUint32(off, true) !== 0x02014b50) throw new Error("Invalid ZIP central directory");
+    const method = dv.getUint16(off + 10, true);
+    const compSize = dv.getUint32(off + 20, true);
+    const uncompSize = dv.getUint32(off + 24, true);
+    const nameLen = dv.getUint16(off + 28, true);
+    const extraLen = dv.getUint16(off + 30, true);
+    const commentLen = dv.getUint16(off + 32, true);
+    const localOffset = dv.getUint32(off + 42, true);
+    const name = new TextDecoder().decode(bytes.slice(off + 46, off + 46 + nameLen));
+    entries.push({name, method, compSize, uncompSize, localOffset});
+    off += 46 + nameLen + extraLen + commentLen;
+  }
+  return {bytes, entries};
+}
+
+async function unzipEntry(bytes, entry){
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const off = entry.localOffset;
+  if (dv.getUint32(off, true) !== 0x04034b50) throw new Error("Invalid ZIP local header for " + entry.name);
+  const nameLen = dv.getUint16(off + 26, true);
+  const extraLen = dv.getUint16(off + 28, true);
+  const dataStart = off + 30 + nameLen + extraLen;
+  const data = bytes.slice(dataStart, dataStart + entry.compSize);
+  if (entry.method === 0) return data;
+  if (entry.method === 8) {
+    const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+  throw new Error("Unsupported ZIP compression method " + entry.method + " for " + entry.name);
+}
+
+function textDecode(bytes){ return new TextDecoder("utf-8").decode(bytes); }
+
+function parseSharedStrings(bytes){
+  const xml = new DOMParser().parseFromString(textDecode(bytes), "application/xml");
+  return [...xml.getElementsByTagName("si")].map(si => [...si.getElementsByTagName("t")].map(t => t.textContent || "").join(""));
+}
+
+function parseWorkbookSheetNames(wbBytes, relsBytes){
+  const wb = new DOMParser().parseFromString(textDecode(wbBytes), "application/xml");
+  const rels = new DOMParser().parseFromString(textDecode(relsBytes), "application/xml");
+  const relMap = {};
+  for (const r of [...rels.getElementsByTagName("Relationship")]) {
+    let target = r.getAttribute("Target") || "";
+    if (target.startsWith("/")) target = target.replace(/^\/+/, "");
+    else target = "xl/" + target.replace(/^\.?\//, "");
+    relMap[r.getAttribute("Id")] = target;
+  }
+  const out = {};
+  for (const s of [...wb.getElementsByTagName("sheet")]) {
+    const name = s.getAttribute("name");
+    const rid = s.getAttribute("r:id") || s.getAttribute("id");
+    if (name && rid && relMap[rid]) out[relMap[rid]] = name;
+  }
+  return out;
+}
+
+function parseWorksheet(xmlText, sharedStrings){
+  const xml = new DOMParser().parseFromString(xmlText, "application/xml");
+  const rows = [];
+  for (const row of [...xml.getElementsByTagName("row")]) {
+    const arr = [];
+    for (const c of [...row.getElementsByTagName("c")]) {
+      const ref = c.getAttribute("r") || "";
+      const col = colIndex(ref.replace(/[0-9]/g, "")) || arr.length;
+      arr[col] = readCell(c, sharedStrings);
+    }
+    if (arr.some(v => String(v ?? "").trim())) rows.push(arr.map(v => v ?? ""));
+  }
+  const headers = rows.length ? rows[0] : [];
+  const dataRows = rows.slice(1).filter(r => r.some(v => String(v ?? "").trim()));
+  return {headers, rows: dataRows};
+}
+
+function readCell(c, sharedStrings){
+  const t = c.getAttribute("t");
+  const v = c.getElementsByTagName("v")[0]?.textContent ?? "";
+  if (t === "s") return sharedStrings[Number(v)] ?? v;
+  if (t === "inlineStr") return [...c.getElementsByTagName("t")].map(x => x.textContent || "").join("");
+  if (t === "b") return v === "1" ? "TRUE" : "FALSE";
+  return v;
+}
+
+function colIndex(letters){
+  let n = 0;
+  for (const ch of letters.toUpperCase()) {
+    if (ch < "A" || ch > "Z") continue;
+    n = n * 26 + (ch.charCodeAt(0) - 64);
+  }
+  return n ? n - 1 : 0;
+}
+
+async function sha256File(file){
+  if (!(window.crypto && crypto.subtle && crypto.subtle.digest)) {
+    return "unavailable"; /* this browser does not expose SHA-256 for local files; analysis is unaffected */
+  }
+  const hash = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2,"0")).join("");
+}
+
+function imageDimensions(file){
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { const d = {width: img.naturalWidth, height: img.naturalHeight}; URL.revokeObjectURL(url); resolve(d); };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+/* ============ cross-surface findings (the join) ============ */
+function collectRows(results, type){
+  const out = [];
+  for (const r of results) {
+    for (const s of r.surfaces) {
+      if (s.surfaceType === type && Array.isArray(s.records)) {
+        for (const rec of s.records) out.push({rec, s, file: r.fileName, sha: r.sha256});
+      }
+    }
+  }
+  return out;
+}
+
+function fval(entry, canon){
+  const fm = entry.s.fieldMap || {};
+  const key = fm[canon];
+  return key ? entry.rec[key] : undefined;
+}
+
+function toNum(v){
+  if (v === null || v === undefined || String(v).trim() === "") return null;
+  const n = parseFloat(String(v).replace(/,/g, ""));
+  return isNaN(n) ? null : n;
+}
+
+function normId(v){ return String(v ?? "").trim().toUpperCase(); }
+function rowRef(entry){
+  const word = entry.rec.__rowWord || "row";
+  return (entry.s.sheet ? entry.s.sheet + " · " : "") + word + " " + entry.rec.__row;
+}
+function srcLabel(entry){ return entry.file + (entry.s.sheet ? " / " + entry.s.sheet : ""); }
+
+const SEV_ORDER = {masked_shortage:0, shortage:1, unknown_availability:2, no_inventory_match:3, no_part_link:4, supportable:5};
+const SEV_META = {
+  masked_shortage: {label: "Administrative stock masks a physical shortage", color: "red"},
+  shortage: {label: "Physical shortage", color: "red"},
+  unknown_availability: {label: "Availability cannot be computed from these fields", color: "amber"},
+  no_inventory_match: {label: "No inventory record for the blocking part", color: "amber"},
+  no_part_link: {label: "Blocked work without part linkage", color: "amber"},
+  supportable: {label: "Supportable from stock on record", color: "green"}
+};
+
+function buildFindings(results){
+  const inv = collectRows(results, "inventory");
+  const mx = collectRows(results, "maintenance");
+  const due = collectRows(results, "due_in");
+
+  if (!mx.length || !inv.length) {
+    const missing = [];
+    if (!mx.length) missing.push("a maintenance/work-order surface (work order or asset ID, status, ideally the required part)");
+    if (!inv.length) missing.push("an inventory surface (item/part ID plus on-hand or serviceable quantity)");
+    return {findings: [], note: "No cross-surface finding is possible yet. To test administrative availability against physical availability, this page needs " + missing.join(" and ") + ". That requirement is itself the first ask."};
+  }
+
+  const findings = [];
+  for (const w of mx) {
+    const status = String(fval(w, "status") ?? "").toLowerCase();
+    if (status.includes("closed") || status.includes("complete")) continue;
+
+    const woId = String(fval(w, "work_order_id") ?? "").trim();
+    const asset = String(fval(w, "asset_id") ?? "").trim();
+    const reason = String(fval(w, "blocking_reason") ?? "").trim();
+    const part = String(fval(w, "required_part_id") ?? "").trim();
+    const subject = asset ? "Asset " + asset : (woId ? "Work order " + woId : "An unidentified work order");
+    const woLabel = woId ? "work order " + woId : "an open work order";
+
+    const evidence = [{
+      label: "Work order",
+      entry: w,
+      text: [woId, asset, fval(w, "status"), reason ? "reason: " + reason : ""].filter(Boolean).join(" · ")
+    }];
+
+    if (!part) {
+      findings.push({kind: "no_part_link", subject,
+        statement: `${subject} has ${woLabel} open (${fval(w, "status") ?? "status unknown"}), but the record carries no required-part linkage — it cannot be joined to inventory, so the supply constraint path is invisible.`,
+        evidence, caveats: surfaceCaveats([w]), action: `Record the required part/NSN on ${woLabel} so the block can be traced to supply, then resubmit the export.`});
+      continue;
+    }
+
+    const pid = normId(part);
+    const matches = inv.filter(x => normId(fval(x, "item_id")) === pid);
+
+    const dueMatches = due.filter(d => normId(fval(d, "item_id") ?? fval(d, "required_part_id")) === pid);
+    let dueQty = null; const dueBits = [];
+    for (const d of dueMatches) {
+      const q = toNum(fval(d, "quantity"));
+      if (q !== null) dueQty = (dueQty ?? 0) + q;
+      dueBits.push([fval(d, "status"), fval(d, "due_date") ? "ETA " + fval(d, "due_date") : ""].filter(Boolean).join(", "));
+      evidence.push({label: "Due-in", entry: d, text: [fval(d, "requisition_id"), fval(d, "quantity") != null ? "qty " + fval(d, "quantity") : "", fval(d, "status"), fval(d, "due_date") ? "ETA " + fval(d, "due_date") : ""].filter(Boolean).join(" · ")});
+    }
+    const dueTxt = dueMatches.length
+      ? `${dueQty ?? "Some"} due in — ${dueBits.filter(Boolean).join("; ")}.`
+      : "No due-in record was provided for this part.";
+
+    if (!matches.length) {
+      findings.push({kind: "no_inventory_match", subject,
+        statement: `${subject} is waiting on ${part}${reason ? " (" + reason + ")" : ""}, but no inventory record for ${part} was found in the loaded surfaces — the constraint cannot be tested against stock. ${dueTxt}`,
+        evidence, caveats: surfaceCaveats([w, ...dueMatches]), action: `Obtain an inventory export that covers ${part} — or confirm the part ID mapping with supply — before planning this job against stock.`});
+      continue;
+    }
+
+    let onHand = null, serv = null, alloc = null;
+    for (const m of matches) {
+      const oh = toNum(fval(m, "on_hand"));
+      const sv = toNum(fval(m, "serviceable_qty"));
+      const al = toNum(fval(m, "allocated_qty"));
+      if (oh !== null) onHand = (onHand ?? 0) + oh;
+      if (sv !== null) serv = (serv ?? 0) + sv;
+      if (al !== null) alloc = (alloc ?? 0) + al;
+      evidence.splice(1, 0, {label: "Inventory", entry: m,
+        text: [part, oh !== null ? "on hand " + oh : "", sv !== null ? "serviceable " + sv : "", al !== null ? "allocated " + al : "", fval(m, "location"), fval(m, "as_of_date") ? "as of " + fval(m, "as_of_date") : ""].filter(Boolean).join(" · ")});
+    }
+    const avail = serv === null ? null : serv - (alloc ?? 0);
+    const involved = [w, ...matches, ...dueMatches];
+
+    if (avail === null) {
+      findings.push({kind: "unknown_availability", subject,
+        statement: `${subject} is waiting on ${part}. Inventory shows ${onHand ?? "an unknown quantity"} on hand, but without serviceable/allocated fields, physical availability cannot be computed — the on-hand figure may overstate what can actually be issued. ${dueTxt}`,
+        evidence, caveats: surfaceCaveats(involved), action: `Physically verify ${part} at the bin before planning against recorded stock, and capture serviceable and allocated counts in the next export.`});
+    } else if (avail <= 0 && (onHand ?? 0) > 0) {
+      findings.push({kind: "masked_shortage", subject,
+        statement: `${subject} is down, waiting on ${part}${reason ? " (" + reason + ")" : ""}. The record shows ${onHand} on hand — but ${serv ?? 0} serviceable and ${alloc ?? 0} already allocated leave none physically available to this work${(alloc ?? 0) > (serv ?? 0) ? " (allocations exceed serviceable stock)" : ""}. Administrative stock exists; issuable stock does not. ${dueTxt}`,
+        evidence, caveats: surfaceCaveats(involved), action: `Do not plan this job against recorded on-hand stock. Ask supply whether an allocated unit of ${part} can be diverted, chase the due-in, and log the serviceable/unallocated split in the shift note.`});
+    } else if (avail <= 0) {
+      findings.push({kind: "shortage", subject,
+        statement: `${subject} is waiting on ${part}, and the record confirms the shortage: ${onHand ?? 0} on hand, ${Math.max(0, avail)} physically available. ${dueTxt}`,
+        evidence, caveats: surfaceCaveats(involved), action: `Treat as parts-blocked. Chase the due-in for ${part} and record the ETA against the work order.`});
+    } else {
+      findings.push({kind: "supportable", subject,
+        statement: `${subject} requires ${part}, and the record shows ${avail} unit(s) physically available (${serv} serviceable, ${alloc ?? 0} allocated). Stock on record can support this work — if the record is true.`,
+        evidence, caveats: surfaceCaveats(involved), action: `Issue ${part} against serviceable stock and update the allocation record the moment the unit is committed to this job.`});
+    }
+  }
+
+  findings.sort((a, b) => SEV_ORDER[a.kind] - SEV_ORDER[b.kind]);
+  if (!findings.length) {
+    return {findings: [], note: "Maintenance and inventory surfaces were loaded, but no open work orders were found to test against stock."};
+  }
+  return {findings, note: null};
+}
+
+function surfaceCaveats(entries){
+  const seen = new Set();
+  const out = [];
+  for (const e of entries) {
+    const miss = e.s.missingRecommendedFields || [];
+    if (!miss.length) continue;
+    const key = srcLabel(e) + "|" + miss.join(",");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(`${e.s.surfaceType} surface “${srcLabel(e)}” lacks: ${miss.join(", ")} — confidence is limited accordingly.`);
+  }
+  return out;
+}
+
+/* ============ rendering ============ */
+function renderAll(results){
+  renderFindings(results);
+  renderReport(results);
+  renderAsks(results);
+  el("findingSrc").textContent = isDemoData
+    ? "derived from built-in dummy data — no real unit is described"
+    : "derived from the files you provided";
+}
+
+function renderFindings(results){
+  const {findings, note} = buildFindings(results);
+  lastFindings = findings;
+  const box = el("findings");
+
+  if (!findings.length) {
+    box.innerHTML = `<div class="finding sev-amber"><div class="fkind c-amber">No cross-surface finding</div><p class="fstatement" style="margin:0">${escapeHtml(note || "")}</p></div>`;
+    return;
+  }
+
+  const worst = findings[0];
+  let headline;
+  if (worst.kind === "masked_shortage") headline = `The record says the part is in stock. None is physically available — and ${worst.subject} stays down.`;
+  else if (worst.kind === "shortage") headline = `The record and the flightline agree: the part is not there, and ${worst.subject} stays down.`;
+  else if (worst.kind === "unknown_availability") headline = `These records cannot tell you whether the stock they claim can actually be issued.`;
+  else if (worst.kind === "supportable") headline = `On these records, open work is supportable from stock — if the records are true.`;
+  else headline = `Open work cannot yet be tested against stock — the linkage is missing, and that gap is the finding.`;
+
+  const counts = {red: 0, amber: 0, green: 0};
+  for (const f of findings) counts[SEV_META[f.kind].color]++;
+
+  const cards = findings.map(f => {
+    const meta = SEV_META[f.kind];
+    const ev = f.evidence.map(e => `<tr>
+      <td>${escapeHtml(e.label)}</td>
+      <td>${escapeHtml(srcLabel(e.entry))}<br><span style="color:var(--muted)">sha-256 ${escapeHtml(e.entry.sha.slice(0,12))}…</span></td>
+      <td>${escapeHtml(rowRef(e.entry))}</td>
+      <td>${escapeHtml(e.text || "")}</td>
+    </tr>`).join("");
+    return `<article class="finding sev-${meta.color}">
+      <div class="fkind c-${meta.color}">${escapeHtml(meta.label)}</div>
+      <p class="fstatement">${escapeHtml(f.statement)}</p>
+      <table class="evtable">
+        <thead><tr><th>Link</th><th>Source surface</th><th>Where</th><th>Record</th></tr></thead>
+        <tbody>${ev}</tbody>
+      </table>
+      <div class="shiftact"><b>Action for the shift</b>${escapeHtml(f.action || "")}</div>
+      ${f.caveats.length ? `<ul class="caveats">${f.caveats.map(c => `<li>${escapeHtml(c)}</li>`).join("")}</ul>` : ""}
+    </article>`;
+  }).join("");
+
+  box.innerHTML = `
+    <div class="verdict sev-${SEV_META[worst.kind].color}">
+      <div class="vkind">Headline finding · ${isDemoData ? "dummy data" : "your data"}</div>
+      <h2>${escapeHtml(headline)}</h2>
+      <div class="tallyrow">
+        ${counts.red ? `<span class="chip c-red">${counts.red} blocked — physical shortage</span>` : ""}
+        ${counts.amber ? `<span class="chip c-amber">${counts.amber} indeterminate — evidence gap</span>` : ""}
+        ${counts.green ? `<span class="chip c-green">${counts.green} supportable on record</span>` : ""}
+        <span class="tallynote">every clause below cites its source file, row, and hash</span>
+      </div>
+    </div>
+    ${cards}`;
+}
+
+function renderReport(results){
+  const counts = {PASS:0, PASS_WITH_GAPS:0, FAIL:0};
+  for (const r of results) for (const s of r.surfaces) counts[s.status] = (counts[s.status] || 0) + 1;
+  el("summary").innerHTML = `
+    <div class="box n-ok"><b>${counts.PASS}</b><span>pass</span></div>
+    <div class="box n-gold"><b>${counts.PASS_WITH_GAPS}</b><span>pass with gaps</span></div>
+    <div class="box n-red"><b>${counts.FAIL}</b><span>fail</span></div>
+    <div class="boxnote">A failure is an operational gap and a next ask, not a dead end.</div>`;
+
+  const rows = [];
+  for (const r of results) {
+    for (const s of r.surfaces) {
+      rows.push(`<tr>
+        <td>${escapeHtml(r.fileName)}${s.sheet ? " / " + escapeHtml(s.sheet) : ""}</td>
+        <td>${badge(s.status)}</td>
+        <td>${escapeHtml(s.surfaceType)}</td>
+        <td><span class="tier">${escapeHtml(s.evidenceTierCandidate)}</span></td>
+        <td>${escapeHtml(String(s.rowsCount))}</td>
+        <td style="font-family:var(--sans);font-size:13px">${escapeHtml(s.reason)}</td>
+      </tr>`);
+    }
+  }
+  el("tableWrap").innerHTML = `<table>
+    <thead><tr><th>Surface</th><th>Status</th><th>Type</th><th>Tier candidate</th><th>Rows</th><th>Why</th></tr></thead>
+    <tbody>${rows.join("")}</tbody>
+  </table>`;
+
+  const details = [];
+  for (const r of results) {
+    for (const s of r.surfaces) {
+      details.push(`<article class="detail">
+        <h3>${escapeHtml(r.fileName)}${s.sheet ? " / " + escapeHtml(s.sheet) : ""} ${badge(s.status)}</h3>
+        <p><b>Surface:</b> ${escapeHtml(s.surfaceType)} · <b>Tier candidate:</b> ${escapeHtml(s.evidenceTierCandidate)}</p>
+        ${s.passesAs ? `<p><b>Passes as:</b> ${escapeHtml(s.passesAs)}</p>` : ""}
+        <p><b>SHA-256:</b> <code>${escapeHtml(r.sha256)}</code></p>
+        <p><b>Detected fields:</b> ${escapeHtml((s.canonicalFieldsDetected || []).join(", ") || "none")}</p>
+        <p><b>Missing recommended:</b> ${escapeHtml((s.missingRecommendedFields || []).join(", ") || "none")}</p>
+        ${(s.missingMinimumGroups && s.missingMinimumGroups.length) ? `<p><b>Missing minimum groups:</b> ${escapeHtml(JSON.stringify(s.missingMinimumGroups))}</p>` : ""}
+        <div class="meaning"><b>What this tells us:</b> ${escapeHtml(operationalMeaning(s))}</div>
+        <div class="nextask"><b>Next ask:</b> ${escapeHtml(nextAsk(s))}</div>
+        ${(s.limitations || []).length ? `<ul>${(s.limitations || []).map(x => `<li>${escapeHtml(x)}</li>`).join("")}</ul>` : ""}
+      </article>`);
+    }
+  }
+  el("details").innerHTML = details.join("");
+}
+
+function renderAsks(results){
+  const map = new Map();
+  for (const r of results) {
+    for (const s of r.surfaces) {
+      if (s.status === "PASS") continue;
+      const ask = nextAsk(s);
+      if (!map.has(ask)) map.set(ask, new Set());
+      map.get(ask).add(r.fileName + (s.sheet ? " / " + s.sheet : ""));
+    }
+  }
+  const items = [...map.entries()].map(([ask, sources], i) =>
+    `<li><span class="n">${String(i+1).padStart(2,"0")}</span><span>${escapeHtml(ask)}<span class="src">from: ${escapeHtml([...sources].join(" · "))}</span></span></li>`);
+  const n = items.length;
+  items.push(`<li><span class="n">${String(n+1).padStart(2,"0")}</span><span>If a field is not tracked, say so. An honestly declared gap is itself usable evidence; a silently absent field is not.</span></li>`);
+  el("asks").innerHTML = items.join("");
+}
+
+/* ============ meanings & asks (unchanged from v2) ============ */
+function operationalMeaning(s){
+  const missing = new Set(s.missingRecommendedFields || []);
+  const min = JSON.stringify(s.missingMinimumGroups || []);
+  if (s.status === "FAIL") {
+    if (s.evidenceTierCandidate === "unsupported") {
+      return "This file may exist as a business artifact, but this intake path cannot inspect it. It cannot support an AXM finding until it is exported to a readable surface.";
+    }
+    if (String(s.evidenceTierCandidate).includes("xlsx")) {
+      return "The workbook is not rejected as evidence. The browser could not inspect it offline. Exporting the relevant sheet to CSV preserves the demo path.";
+    }
+    if (s.rowsCount === 0) {
+      return "There is no usable row-level record. AXM cannot distinguish a real constraint from an empty or decorative report.";
+    }
+    if (min.includes("item_id") || min.includes("asset_id") || min.includes("work_order_id")) {
+      return "The surface lacks a stable operational identity. Without an item, asset, work order, requisition, or claim ID, AXM cannot bind evidence to a physical thing.";
+    }
+    if (min.includes("on_hand") || min.includes("serviceable_qty") || min.includes("quantity")) {
+      return "The surface lacks a quantity or state field. It may describe work, but it cannot support an availability finding.";
+    }
+    return "The surface can maybe be kept as raw evidence, but it cannot generate a defensible physical-availability finding without a mapping or better export.";
+  }
+
+  if (s.status === "PASS_WITH_GAPS") {
+    if (s.surfaceType === "inventory") {
+      if (missing.has("allocated_qty")) return "The surface can start inventory analysis, but on-hand quantity may overstate physical availability because reservations or allocations are missing.";
+      if (missing.has("as_of_date")) return "The surface can start inventory analysis, but the absence of snapshot time weakens any claim about when availability was true.";
+      return "The surface is usable, but the finding must state its limits. This is enough to start, not enough to overclaim.";
+    }
+    if (s.surfaceType === "maintenance") {
+      if (missing.has("required_part_id")) return "The surface can identify blocked work, but it cannot yet connect the block to a supply constraint path.";
+      return "The work-order state is usable, but the missing context limits how far AXM can trace causality.";
+    }
+    if (s.surfaceType === "due_in") {
+      return "The due-in record can explain a constraint path, but missing delivery/status/location context limits schedule confidence.";
+    }
+    if (s.surfaceType === "screenshot_or_image") {
+      return "This is pixel custody only. It can prove what bytes were provided, but not what the pixels mean until a human-gated annotation layer is added.";
+    }
+    if (s.surfaceType === "ontology_or_api_capture") {
+      return "This can preserve vendor model structure outside the vendor, but it does not prove live authority or operational truth by itself.";
+    }
+    if (s.surfaceType === "text_or_report" || s.surfaceType === "raw_json_document") {
+      return "This can be preserved as source evidence, but it needs extraction or human mapping before AXM can make structured findings.";
+    }
+    return "The surface is usable for intake, but the output must explicitly carry its gaps.";
+  }
+
+  if (s.status === "PASS") {
+    if (s.surfaceType === "inventory") return "This has enough structure to support an initial inventory availability check.";
+    if (s.surfaceType === "maintenance") return "This has enough structure to support a work-order or asset-status check.";
+    if (s.surfaceType === "due_in") return "This has enough structure to support an inbound supply constraint check.";
+    return "This surface has enough structure to promote into the next AXM custody step.";
+  }
+
+  return "No operational interpretation available.";
+}
+
+function nextAsk(s){
+  const missing = new Set(s.missingRecommendedFields || []);
+  if (s.status === "FAIL") {
+    if (s.evidenceTierCandidate === "unsupported") return "Provide the same information as CSV, XLSX, JSON, text, or screenshot.";
+    if (String(s.evidenceTierCandidate).includes("xlsx")) return "Export the relevant worksheet to CSV and rerun the intake.";
+    if (s.rowsCount === 0) return "Provide a non-empty export with one row per item, asset, work order, due-in, or claim.";
+    const min = JSON.stringify(s.missingMinimumGroups || []);
+    if (min.includes("item_id")) return "Add or identify the item/part/NSN/material field and the quantity or serviceability field.";
+    if (min.includes("work_order_id")) return "Add or identify the work order, asset, and status fields.";
+    if (min.includes("requisition_id")) return "Add or identify the requisition/due-in ID, item/part ID, and quantity fields.";
+    return "Give a field map: which column is the operational identity, which is the state/quantity, and which record proves it.";
+  }
+  if (s.surfaceType === "inventory") {
+    if (missing.has("allocated_qty")) return "Add allocation/reservation/commitment quantity if tracked. If not tracked, say so.";
+    if (missing.has("as_of_date")) return "Add snapshot date or report generation time if tracked.";
+    return "Pair this with maintenance work orders so AXM can test administrative stock against blocked work.";
+  }
+  if (s.surfaceType === "maintenance") {
+    if (missing.has("required_part_id")) return "Add the required part/NSN/material field if tracked.";
+    if (missing.has("blocking_reason")) return "Add delay or NMC reason if tracked.";
+    return "Pair this with inventory and due-in records to test whether the block reflects physical availability.";
+  }
+  if (s.surfaceType === "due_in") {
+    return "Add ETA/status/location fields if tracked; otherwise leave blank and mark the gap.";
+  }
+  if (s.surfaceType === "screenshot_or_image") {
+    return "Provide source system name, capture time, and a human annotation of the visible claim.";
+  }
+  if (s.surfaceType === "ontology_or_api_capture") {
+    return "Provide source system, capture time, and whether this is full, paginated, or partial capture.";
+  }
+  if (s.surfaceType === "text_or_report" || s.surfaceType === "raw_json_document") {
+    return "Identify the claim text and the line/page/record that supports it.";
+  }
+  return "Promote this surface to the AXM custody path or pair it with another source surface.";
+}
+
+function badge(status){
+  const label = status === "PASS_WITH_GAPS" ? "PASS W/ GAPS" : status;
+  return `<span class="st ${status.toLowerCase()}">${escapeHtml(label)}</span>`;
+}
+
+/* ============ exports ============ */
+function exportableResults(){
+  return lastResults.map(r => ({...r, surfaces: r.surfaces.map(({records, fieldMap, ...rest}) => rest)}));
+}
+
+function downloadJson(){
+  const payload = {
+    generatedAt: new Date().toISOString(),
+    dataSource: isDemoData ? "built_in_dummy_data" : "user_provided_files",
+    findings: lastFindings.map(f => ({kind: f.kind, label: SEV_META[f.kind].label, subject: f.subject, statement: f.statement, action: f.action || null,
+      evidence: f.evidence.map(e => ({link: e.label, source: srcLabel(e.entry), where: rowRef(e.entry), sha256: e.entry.sha, record: e.text})),
+      caveats: f.caveats})),
+    surfaces: exportableResults()
+  };
+  downloadBlob("axm_surface_acceptance_report.json", JSON.stringify(payload, null, 2), "application/json");
+}
+
+function downloadHtml(){
+  const reportHtml = `<!doctype html><html data-theme="cream"><head><meta charset="utf-8"><title>AXM Surface Acceptance Report</title>${document.querySelector("style").outerHTML}</head><body><div class="wrap"><div class="letterhead"><div class="org">AXM · Surface Acceptance — Report</div><div class="meta">${escapeHtml(new Date().toISOString())}</div></div><div class="stamp">${isDemoData ? "Dummy data · not CUI · not a system of record" : "User-provided data · intake readiness artifact"}</div><div class="sechead" style="margin-top:28px"><span class="secnum">01</span><h2>Finding</h2></div>${el("findings").innerHTML}<div class="sechead"><span class="secnum">02</span><h2>Surface acceptance</h2></div><div class="summary">${el("summary").innerHTML}</div>${el("tableWrap").innerHTML}<div class="sechead"><span class="secnum">03</span><h2>What we need to get started</h2></div><ol class="asks">${el("asks").innerHTML}</ol><p class="footer"><b>Honesty boundary:</b> This report is an intake readiness artifact, not a Genesis-sealed shard.</p></div></body></html>`;
+  downloadBlob("axm_surface_acceptance_report.html", reportHtml, "text/html");
+}
+
+function downloadBlob(name, text, type){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], {type}));
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/* ============ built-in dummy surfaces ============ */
+function makeDemoFiles(){
+  const files = [];
+  const add = (name, content, type) => files.push(new File([content], name, {type: type || "text/plain"}));
+  add("inventory_snapshot.csv", `item_id,item_description,location,on_hand,serviceable_qty,allocated_qty,due_in_qty,as_of_date,source_record_id,notes
+MPU-218,Mission processor unit,Depot-A/Bin-17,3,0,3,2,2026-03-31,INV-2026Q1-001,Administrative stock exists but none available for new work order
+PUMP-441,Hydraulic pump,Depot-A/Bin-02,8,6,1,0,2026-03-31,INV-2026Q1-002,Available
+SENSOR-104,Thermal sensor,ForwardShop-3,2,1,1,4,2026-03-31,INV-2026Q1-003,One serviceable and already allocated
+`, "text/csv");
+  add("maintenance_work_orders.csv", `work_order_id,asset_id,status,required_part_id,blocking_reason,opened_date,as_of_date,source_record_id,notes
+WO-7001,ASSET-A17,open_waiting_parts,MPU-218,required part not serviceable/unallocated,2026-03-20,2026-03-31,MX-2026Q1-7001,Asset cannot return to service
+WO-7002,ASSET-B22,open_scheduled,PUMP-441,,2026-03-18,2026-03-31,MX-2026Q1-7002,Awaiting shop capacity — parts check requested
+WO-7003,ASSET-C08,open_diagnosis,SENSOR-104,repeat fault pending inspection,2026-03-27,2026-03-31,MX-2026Q1-7003,May become parts constraint
+`, "text/csv");
+  add("due_in_records.csv", `requisition_id,item_id,quantity,status,due_date,location,source_record_id,notes
+REQ-9101,MPU-218,2,delayed,2026-04-14,Depot-A,DUEIN-9101,Late supplier shipment
+REQ-9102,SENSOR-104,4,in_transit,2026-04-05,ForwardShop-3,DUEIN-9102,Expected before next maintenance cycle
+`, "text/csv");
+  add("bad_availability_export.csv", `description,notes
+stuff exists somewhere,not enough fields to support availability
+`, "text/csv");
+  add("maintenance_shift_note.txt", "Shift note 2026-03-31\nWO-7001 remains open. Required MPU-218 exists in stock count but no serviceable unallocated unit is available.\nSupply expects two units due 2026-04-14.\n", "text/plain");
+  return files;
+}
+
+/* ============ theme toggle ============ */
+(function initTheme(){
+  const btn = el("themeToggle");
+  const label = () => { btn.textContent = document.documentElement.dataset.theme === "void" ? "◐ switch to cream" : "◑ switch to dark"; };
+  btn.addEventListener("click", () => {
+    const next = document.documentElement.dataset.theme === "void" ? "cream" : "void";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem("axm_v3_theme", next); } catch(e){}
+    label();
+  });
+  label();
+})();
+
+/* ============ helpers ============ */
+function getExt(name){ return String(name).split(".").pop().toLowerCase(); }
+function stem(name){ return String(name).replace(/\.[^.]+$/, ""); }
+function formatBytes(n){
+  if (n < 1024) return n + " B";
+  if (n < 1024*1024) return (n/1024).toFixed(1) + " KB";
+  return (n/1024/1024).toFixed(1) + " MB";
+}
+function escapeHtml(s){
+  return String(s ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* auto-run the dummy surfaces so the finding leads */
+window.addEventListener("DOMContentLoaded", async () => {
+  setFiles(makeDemoFiles(), true);
+  await analyzeCurrentFiles();
+});
+</script>
+</body>
+</html>

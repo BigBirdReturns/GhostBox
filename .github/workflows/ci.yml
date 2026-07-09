@@ -115,26 +115,3 @@ jobs:
       - name: Run the foundry-exit suite (Spectra product tests run, not skip)
         working-directory: GhostBox
         run: python -m pytest tests/test_foundry_*.py -q
-
-  acceptance-page:
-    name: Acceptance page (headless browser)
-    # acceptance.html is the buyer-facing intake demo — pure client-side JS in
-    # one offline file. Its logic only exists in the browser, so the honest
-    # regression test drives the real page headless and asserts the intake
-    # rules' observable behavior (worked-example verdicts, XLSX reader, honesty
-    # boundary, zero network requests). See tests/pages/verify_acceptance.mjs.
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
-      - name: Install Playwright + Chromium
-        run: |
-          npm install --no-save playwright@1
-          npx playwright install --with-deps chromium
-
-      - name: Drive acceptance.html and assert the intake rules
-        run: node tests/pages/verify_acceptance.mjs

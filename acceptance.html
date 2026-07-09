@@ -4,11 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AXM Surface Acceptance — Physical Availability Demonstration</title>
-<!-- House type stack per axm-tools identity: Barlow Condensed (display) + IBM Plex (evidence/running).
-     System fallbacks keep the page readable fully offline. -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<!-- System font stack only — this page makes zero network requests, by design.
+     (House faces Barlow Condensed / IBM Plex render if installed locally; otherwise system equivalents.) -->
 <style>
 :root{
   --display:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
@@ -150,14 +147,10 @@ details[open] summary{border-bottom:1px solid var(--line)}
 .detail ul{margin:6px 0 0;padding-left:18px;color:var(--muted);font-size:13px}
 .hidden{display:none}
 
-/* ---- draft chrome: looks like draft chrome ---- */
-#framingBar{position:fixed;right:14px;bottom:14px;background:var(--bg);border:1px dashed var(--olive);border-radius:3px;padding:7px 9px;font-family:var(--mono);font-size:10px;color:var(--muted);display:flex;gap:5px;align-items:center;z-index:50;opacity:.92;white-space:nowrap}
-#framingBar button{padding:3px 7px;font-size:10px;font-weight:400;background:var(--panel);color:var(--muted);border:1px solid var(--line);border-radius:2px}
-#framingBar button.on{background:var(--btnbg);color:var(--btnfg);border-color:var(--btnbg);font-weight:700}
 @media(max-width:720px){.letterhead{flex-direction:column}.letterhead .meta{text-align:left}.sechead .note{margin-left:0;width:100%}}
 @media print{
   html,html[data-theme="void"]{--bg:#ffffff;--panel:#ffffff;--panel2:#f0ebe0;--ink:#1a1614;--muted:#6b6a5e;--line:#ddd6c6;--rule:#1a1614;--ember:#b23b2e;--gold:#7d6118;--ok:#54682f;--emberT:rgba(178,59,46,.10);--goldT:rgba(125,97,24,.11);--okT:rgba(84,104,47,.11);--olive:#7C7F57;--btnbg:#1a1614;--btnfg:#ffffff;--cardshadow:none}
-  #framingBar,#themeToggle,.heroact,section[data-screen-label="Load surfaces"]{display:none}
+  #themeToggle,.heroact,section[data-screen-label="Load surfaces"]{display:none}
   body{font-size:12px}
   .wrap{padding:0}
   .finding,.verdict,.asks,.boundary,.box{break-inside:avoid}
@@ -182,17 +175,9 @@ details[open] summary{border-bottom:1px solid var(--line)}
   </div>
   <div class="stamp">Dummy data · not CUI · not a system of record · not a deployed integration</div>
 
-  <div class="hero" id="heroFinding" data-framing="finding">
+  <div class="hero" id="heroFinding">
     <h1>Administrative availability is not physical availability.</h1>
     <p class="lead">This standalone page reads ordinary inventory, maintenance, and due-in exports — Excel, CSV, JSON — and checks whether a part the record says is in stock could actually return an asset to service. Five dummy files are already loaded below as a worked example; drop in your own and every finding recomputes.</p>
-  </div>
-  <div class="hero hidden" id="heroStart" data-framing="start">
-    <h1>The exports you already have are enough to start.</h1>
-    <p class="lead">No integration, no network, no install. This page reads the Excel, CSV, and JSON files government teams already work out of and checks whether recorded stock is physically available. Five dummy files are already loaded below as a worked example; drop in your own and every finding recomputes.</p>
-  </div>
-  <div class="hero hidden" id="heroHonesty" data-framing="honesty">
-    <h1>Every finding below states what it cannot prove.</h1>
-    <p class="lead">This standalone page checks ordinary inventory and maintenance exports for one thing: whether recorded stock is physically available. Every finding carries its evidence, its gaps, and the tier it can honestly earn — derived from the five dummy files loaded below until you replace them with your own.</p>
   </div>
 </header>
 
@@ -262,14 +247,6 @@ details[open] summary{border-bottom:1px solid var(--line)}
 </section>
 
 <p class="footer">If a finding above does not match operational reality when run against your own exports, that mismatch is the most valuable output this page can produce — it identifies exactly which record, field, or timestamp is misrepresenting the physical state.</p>
-</div>
-
-<div id="framingBar">
-  <span>DRAFT · lead framing:</span>
-  <button data-f="finding" type="button">A finding</button>
-  <button data-f="start" type="button">B start</button>
-  <button data-f="honesty" type="button">C honesty</button>
-  <button id="framingHide" type="button">hide</button>
 </div>
 
 <script>
@@ -832,6 +809,9 @@ function colIndex(letters){
 }
 
 async function sha256File(file){
+  if (!(window.crypto && crypto.subtle && crypto.subtle.digest)) {
+    return "unavailable"; /* this browser does not expose SHA-256 for local files; analysis is unaffected */
+  }
   const hash = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
   return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2,"0")).join("");
 }
@@ -1084,7 +1064,7 @@ function renderReport(results){
         <td>${escapeHtml(s.surfaceType)}</td>
         <td><span class="tier">${escapeHtml(s.evidenceTierCandidate)}</span></td>
         <td>${escapeHtml(String(s.rowsCount))}</td>
-        <td style="font-family:var(--serif);font-size:13px">${escapeHtml(s.reason)}</td>
+        <td style="font-family:var(--sans);font-size:13px">${escapeHtml(s.reason)}</td>
       </tr>`);
     }
   }
@@ -1271,7 +1251,7 @@ SENSOR-104,Thermal sensor,ForwardShop-3,2,1,1,4,2026-03-31,INV-2026Q1-003,One se
 `, "text/csv");
   add("maintenance_work_orders.csv", `work_order_id,asset_id,status,required_part_id,blocking_reason,opened_date,as_of_date,source_record_id,notes
 WO-7001,ASSET-A17,open_waiting_parts,MPU-218,required part not serviceable/unallocated,2026-03-20,2026-03-31,MX-2026Q1-7001,Asset cannot return to service
-WO-7002,ASSET-B22,closed,PUMP-441,,2026-03-18,2026-03-31,MX-2026Q1-7002,Returned to service
+WO-7002,ASSET-B22,open_scheduled,PUMP-441,,2026-03-18,2026-03-31,MX-2026Q1-7002,Awaiting shop capacity — parts check requested
 WO-7003,ASSET-C08,open_diagnosis,SENSOR-104,repeat fault pending inspection,2026-03-27,2026-03-31,MX-2026Q1-7003,May become parts constraint
 `, "text/csv");
   add("due_in_records.csv", `requisition_id,item_id,quantity,status,due_date,location,source_record_id,notes
@@ -1284,29 +1264,6 @@ stuff exists somewhere,not enough fields to support availability
   add("maintenance_shift_note.txt", "Shift note 2026-03-31\nWO-7001 remains open. Required MPU-218 exists in stock count but no serviceable unallocated unit is available.\nSupply expects two units due 2026-04-14.\n", "text/plain");
   return files;
 }
-
-/* ============ framing switcher (draft chrome) ============
-   Authoring-only: the bar appears with ?draft in the URL, never on the
-   handed-over page. The chosen framing still applies from localStorage. */
-(function initFraming(){
-  const KEY = "axm_v3_framing", HIDE = "axm_v3_framing_hidden";
-  const bar = el("framingBar");
-  if (!new URLSearchParams(location.search).has("draft")) bar.style.display = "none";
-  const apply = f => {
-    for (const h of document.querySelectorAll(".hero")) h.classList.toggle("hidden", h.dataset.framing !== f);
-    for (const b of bar.querySelectorAll("button[data-f]")) b.classList.toggle("on", b.dataset.f === f);
-  };
-  let saved = null;
-  try { saved = localStorage.getItem(KEY); } catch(e){}
-  apply(saved || "finding");
-  bar.addEventListener("click", e => {
-    const b = e.target.closest("button");
-    if (!b) return;
-    if (b.id === "framingHide") { bar.style.display = "none"; try { localStorage.setItem(HIDE, "1"); } catch(e){} return; }
-    if (b.dataset.f) { apply(b.dataset.f); try { localStorage.setItem(KEY, b.dataset.f); } catch(e){} }
-  });
-  try { if (localStorage.getItem(HIDE) === "1") bar.style.display = "none"; } catch(e){}
-})();
 
 /* ============ theme toggle ============ */
 (function initTheme(){

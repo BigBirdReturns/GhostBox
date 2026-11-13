@@ -1,5 +1,7 @@
 # GhostBox v0.8.2
 
+> **Foundry interoperability / independent DevCon 7 reproduction:** [Executable operator playbook](foundry_exit/INTEROPERABILITY_PLAYBOOK.md) and the [nine-plank migration ledger](foundry_exit/SHIP_OF_THESEUS.md). This is a synthetic-tested Ontology v2 **read** bridge, OpenTelemetry trace curation and portable LoRA path, not a complete application, permissions or writeback replacement. Run `python -m foundry_exit.interop_acceptance --out ./demo-cutover` for the local provider-switch proof.
+
 **Integrated intelligence stack for semantic tension analysis.**
 
 **Now with Screen Ghost photonic intake.**

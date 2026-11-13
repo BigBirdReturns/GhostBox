@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import binascii
 from datetime import datetime, timezone
 import hashlib
 import hmac
@@ -21,7 +22,7 @@ from pathlib import Path
 import re
 import shutil
 import tempfile
-from typing import Any, Callable, Mapping
+from typing import Any, Callable, Mapping, Optional
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, quote, unquote, urlsplit, urlencode
 from urllib.request import Request, build_opener, HTTPRedirectHandler
@@ -86,12 +87,12 @@ def authorized_fetch(base_url: str, token: str, timeout: float = 25.0) -> Callab
     return fetch
 
 
-def _pages(fetch: Callable[[str, dict], dict], path: str, max_pages: int = 20000) -> tuple[list[dict], list[dict], int | None]:
+def _pages(fetch: Callable[[str, dict], dict], path: str, max_pages: int = 20000) -> tuple[list[dict], list[dict], Optional[int]]:
     pages: list[dict] = []
     rows: list[dict] = []
-    total: int | None = None
+    total: Optional[int] = None
     seen = set()
-    token: str | None = None
+    token: Optional[str] = None
     for _ in range(max_pages):
         params = {"pageSize": 1000}
         if token is not None:
@@ -151,7 +152,7 @@ def capture_ontology(
         "files": [],
     }
 
-    def record(relative: str, pages: list[dict], *, row_count: int, total: int | None):
+    def record(relative: str, pages: list[dict], *, row_count: int, total: Optional[int]):
         dest = tmp / relative
         dest.parent.mkdir(parents=True, exist_ok=True)
         payload = _json_bytes(pages)
@@ -302,7 +303,7 @@ class CapturedOntology:
                 if state["path"] != relative or state["digest"] != self.digest:
                     raise ValueError("scope")
                 offset = int(state["offset"])
-            except (ValueError, KeyError, TypeError):
+            except (ValueError, KeyError, TypeError, binascii.Error):
                 raise BridgeError("INVALID_PAGE_TOKEN", "Page token is stale or invalid")
         if offset < 0 or offset >= len(rows) and supplied:
             raise BridgeError("INVALID_PAGE_TOKEN", "Page offset outside captured range")

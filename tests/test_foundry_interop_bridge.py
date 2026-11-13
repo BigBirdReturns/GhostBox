@@ -106,6 +106,9 @@ class BridgeTests(unittest.TestCase):
             self.capture.get(path,{"pageToken":[token[:-1]+("a" if token[-1]!="a" else "b")]},self.secret)
         with self.assertRaises(BridgeError):
             self.capture.get(path,{"pageToken":[token]},self.secret+"rotated")
+        with self.assertRaises(BridgeError) as c:
+            self.capture.get(path,{"pageToken":["%%%"]},self.secret)
+        self.assertEqual(c.exception.code,"INVALID_PAGE_TOKEN")
 
     def test_hash_mismatch_fails_closed(self):
         original=(self.root/"objects/Ticket.json").read_bytes()
